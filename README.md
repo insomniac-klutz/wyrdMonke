@@ -2,6 +2,8 @@
 
 ### *monke write code, monke ship*
 
+> **[Five roles walked into a standup. None walked out.](monke-phil.md)** — *the manifesto for why monke replaced your org chart with four spec files and a banana*
+
 ---
 
 ## What is this
