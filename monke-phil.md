@@ -4,7 +4,7 @@
 
 ---
 
-## The Old Gods Are Dead
+## Five Roles Walked Into a Standup. None Walked Out.
 
 Once upon a time, software was built by **roles**.
 
