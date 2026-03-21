@@ -1,0 +1,131 @@
+graph TD
+    subgraph root["wyrdMonke/"]
+        README["README.md"]
+        INIT["monke-init.md"]
+        SYNC["monke-sync.md"]
+        CLAUDE["monke-CLAUDE.md"]
+        MERMAID["monke-mermaid.mmd"]
+    end
+
+    subgraph status_skills["monke-status/"]
+        STATUS_SKILL["status.md"]
+    end
+
+    subgraph docs["monke-docs/"]
+        SDLC["sdlc-specs.md"]
+        DESIGN["design-specs.md"]
+        IMPL["implementation-specs.md"]
+        TEST["test-specs.md"]
+        PROJECT["project-specs.md"]
+        HLD["hld.md"]
+        OQ["open-questions.md"]
+        STATUS_TPL["status-template.md"]
+
+        subgraph lld_dir["lld/"]
+            LLD["component .md files"]
+        end
+
+        subgraph decisions_dir["decisions/"]
+            ADR["NNN-slug.md files"]
+        end
+
+        subgraph checkpoints_dir["checkpoints/"]
+            CP["phase-N-checkpoint.md files"]
+        end
+    end
+
+    subgraph design_skills["monke-design/"]
+        SK_TINKER["tinker.md"]
+        SK_RECON["recon.md"]
+        SK_HLD["hld.md"]
+        SK_LLD["lld.md"]
+        SK_ADR["adr.md"]
+        SK_OQ["oq.md"]
+    end
+
+    subgraph impl_skills["monke-implement/"]
+        SK_FILL["fill.md"]
+        SK_IMPLEMENT["implement.md"]
+        SK_CHECKPOINT["checkpoint.md"]
+    end
+
+    subgraph test_skills["monke-test/"]
+        SK_TESTPLAN["test-plan.md"]
+        SK_TESTRUN["test-run.md"]
+        SK_COVERAGE["coverage.md"]
+    end
+
+    %% CLAUDE.md is the entry point
+    CLAUDE -->|"read first"| STATUS_SKILL
+    CLAUDE -->|"read"| PROJECT
+    CLAUDE -->|"read"| HLD
+    CLAUDE -->|"read"| OQ
+
+    %% SDLC connects all specs
+    SDLC -->|"produces"| DESIGN
+    SDLC -->|"consumes"| IMPL
+    SDLC -->|"governs"| TEST
+    SDLC -->|"binds"| PROJECT
+
+    %% Design specs produce artifacts
+    DESIGN -->|"creates"| HLD
+    DESIGN -->|"creates"| LLD
+    DESIGN -->|"creates"| ADR
+    DESIGN -->|"owns"| CP
+    DESIGN -->|"references stack"| PROJECT
+
+    %% Implementation consumes design output
+    IMPL -->|"consumes"| LLD
+    IMPL -->|"records issues"| OQ
+    IMPL -->|"references stack"| PROJECT
+
+    %% Test specs govern how tests are written
+    TEST -->|"references bindings"| PROJECT
+
+    %% Project specs is the binding hub
+    PROJECT -->|"S2: stack bindings"| IMPL
+    PROJECT -->|"S9: test bindings"| TEST
+    PROJECT -->|"S10: design bindings"| DESIGN
+
+    %% Artifacts feed checkpoints
+    LLD -->|"IL-3 passed"| CP
+    HLD -->|"data flows"| CP
+    OQ -->|"resolved via"| ADR
+
+    %% Init installs skills and scaffolds project
+    INIT -->|"installs"| SK_TINKER
+    INIT -->|"scaffolds"| PROJECT
+    INIT -->|"merges"| CLAUDE
+
+    %% Sync updates skills and diffs specs
+    SYNC -->|"updates"| SK_TINKER
+    SYNC -->|"diffs"| DESIGN
+    SYNC -->|"diffs"| IMPL
+    SYNC -->|"diffs"| TEST
+
+    %% Design skills orchestrate design specs
+    SK_TINKER -->|"fills"| PROJECT
+    SK_TINKER -->|"fills"| CLAUDE
+    SK_RECON -->|"reverse-engineers"| HLD
+    SK_RECON -->|"surfaces"| OQ
+    SK_HLD -->|"orchestrates"| DESIGN
+    SK_LLD -->|"orchestrates"| DESIGN
+    SK_ADR -->|"creates"| ADR
+    SK_OQ -->|"manages"| OQ
+
+    %% Implementation skills orchestrate implementation specs
+    SK_FILL -->|"fills"| PROJECT
+    SK_IMPLEMENT -->|"orchestrates"| IMPL
+    SK_IMPLEMENT -->|"consumes"| LLD
+    SK_CHECKPOINT -->|"creates"| CP
+
+    %% Test skills orchestrate test specs
+    SK_TESTPLAN -->|"writes plans in"| LLD
+    SK_TESTRUN -->|"executes per"| TEST
+    SK_COVERAGE -->|"measures per"| TEST
+
+    %% Status skill reads everything
+    STATUS_SKILL -->|"scans"| HLD
+    STATUS_SKILL -->|"scans"| LLD
+    STATUS_SKILL -->|"scans"| OQ
+    STATUS_SKILL -->|"scans"| CP
