@@ -52,3 +52,24 @@ Skills are slash commands that orchestrate each SDLC phase. Run `/monke-init` to
 Cross-cutting rules:
 - **Pause gates:** Claude stops and waits for user confirmation at every decision point.
 - **Status tracking:** Every skill reads `monke-status.md` on entry and updates it on exit.
+
+## Commit Format
+
+```
+action : description
+```
+
+- All lowercase
+- Action is the verb: `add`, `update`, `fix`, `remove`, `refactor`, `rename`, etc.
+- Then ` : ` (space-colon-space)
+- Then a short description of what changed
+
+Examples:
+```
+add : project scaffold and meta files
+update : hld with revised component boundaries
+fix : missing pause gate in sync phase 2
+remove : deprecated recon fallback logic
+refactor : test-run tier resolution
+rename : status template to match new schema
+```
