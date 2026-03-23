@@ -4,17 +4,15 @@
 
 ---
 
-## Five Roles Walked Into a Standup. None Walked Out.
-
 Once upon a time, software was built by **roles**.
 
-The **Backend Developer** sat in a dark room whispering to databases. The **Frontend Developer** argued about whether a button should be 3px or 4px from the edge while importing 47MB of node_modules to render a div. The **QA Engineer** filed tickets nobody read. The **Designer** made a Figma that bore no structural resemblance to what got built. The **Product Manager** wrote user stories in a dialect of English that communicated nothing to anyone, then wondered why sprint velocity was down.
+The **Backend Developer** sat in a dark room whispering to databases. The **Frontend Developer** argued about whether a button should be 3px or 4px from the edge while importing 47MB of node_modules to render a div. The **ML Engineer** sat in a Jupyter notebook training a model for six weeks, mass-texted the team a Weights & Biases link nobody clicked, then threw a pickle file over the wall and prayed someone knew how to serve it. The **QA Engineer** filed tickets nobody read. The **Designer** made a Figma that bore no structural resemblance to what got built. The **Product Manager** wrote user stories in a dialect of English that communicated nothing to anyone, then wondered why sprint velocity was down.
 
 Each role had a territory. Each territory had walls. Each wall had a Slack channel where people typed passive-aggressive messages about "alignment."
 
 They called this **collaboration**.
 
-It was five people, each holding one piece of the elephant, arguing about whether the elephant was a snake, a tree trunk, a wall, a fan, or a rope. Nobody was wrong. Everybody was useless.
+It was six people, each holding one piece of the elephant, arguing about whether the elephant was a snake, a tree trunk, a wall, a fan, a rope, or a neural network. Nobody was wrong. Everybody was useless.
 
 **The old gods are dead.** Not because they were false — but because the temple they required no longer exists.
 
@@ -29,6 +27,8 @@ Design didn't die. The person whose entire job was to hand you a PDF of colored 
 Testing didn't die. The QA team that ran manual regression suites every two weeks and filed bugs titled "button doesn't work (see attached screenshot of wrong page)" — that died. Test *discipline* — isolation tiers, mock boundaries, fixture strategies, the gate that says "you shall not pass until green" — that got **promoted**. Tests aren't an afterthought phase anymore. They're woven into every layer of implementation, designed at LLD creation, and nobody gets to "add them later."
 
 Backend and frontend didn't die. The *identity* of "I am a backend developer and therefore this React component is not my problem" — that died. The engineering principles — pure functions, clear boundaries, shape before behavior, contracts before logic — those are universal now. They don't care what language you write or which end of the HTTP request you're standing on.
+
+ML didn't die. The person who spent six weeks in a notebook kingdom — curating datasets, tuning hyperparameters, staring at loss curves like tea leaves, mass-exporting `.pkl` files into a Slack channel titled `#model-handoff` that the backend team muted in 2023 — that died. The *discipline* — understanding what a model actually needs (data contracts, evaluation metrics, latency budgets, drift detection), knowing when a retrieval pipeline beats a fine-tune, knowing when your fancy transformer is just a glorified lookup table — that's **critical** now. More critical than ever, because the AI doing the building doesn't inherently know when to reach for a vector store vs. a classifier vs. a prompt chain vs. a fine-tuned model. Someone has to. That someone is the human who spent years learning the difference — and their judgment now lives in HLD component decisions and ADRs, not in a notebook nobody can reproduce.
 
 Product didn't die. The ritual of a person who doesn't build things telling people who do build things what to build, based on a roadmap built from vibes and stakeholder anxiety — that died. The *intent* — knowing what to build and why, scoping ruthlessly, killing features before they metastasize — that lives at L1 Context and in every pause gate where the human says "Confirm / Adjust / Reject."
 
@@ -66,6 +66,14 @@ Wyrd world: Tests are **designed during LLD creation** — before a single line 
 
 The old QA role was a checkpoint at the end. The wyrd way makes testing a **structural property of the build process**. You can't have untested code the same way you can't have unsigned types — it's not a policy, it's a constraint of the system.
 
+### ML/Data Science Got Warped
+
+Old world: The ML engineer lives in a parallel universe. They have their own repo (or worse, a folder of notebooks named `final_v3_REAL_final.ipynb`). They train models on data the backend team doesn't know exists, evaluate them with metrics the product team doesn't understand, and deploy them via a "just run this script" process that breaks every time someone updates Python. The handoff between "model works in my notebook" and "model works in production" is a chasm that swallowed entire quarters. Feature engineering was a dark art. Data pipelines were duct tape. Model monitoring was "someone checks the dashboard on Mondays."
+
+Wyrd world: The ML discipline gets **integrated into the design pipeline**, not bolted on after. At HLD time, the human decides: does this component need a model, a retrieval pipeline, a prompt chain, or just a function? That's an ADR — with tradeoffs evaluated, latency budgets specified, data requirements documented. The model isn't a mystery artifact thrown over the wall. It's a **component** with typed inputs, typed outputs, a contract, and test tiers like everything else. Training pipelines become Layer 2 implementations with their own gates. Evaluation metrics become test assertions. Data contracts become Layer 0 types. The discipline of knowing *when* to use ML and *what kind* — that's the human's judgment, expressed at design time, not discovered at deploy time.
+
+The notebook kingdom falls. The discipline of understanding data, models, and their failure modes ascends — into the same spec-driven, gate-enforced pipeline as everything else.
+
 ### Product Got Warped
 
 Old world: The product manager writes a PRD. The PRD is 40 pages. Nobody reads it. The developers build something adjacent to what was described. The PM says "that's not what I meant." Repeat for 6-18 months.
@@ -99,13 +107,14 @@ Product Manager    ──────────→     L1 Context + Pause Gate
 System Architect   ──────────→     design-specs.md + Agent Teams (Architect/Critic)
 Backend Developer  ──────────→     implementation-specs.md + Layer 0-3 Pipeline
 Frontend Developer ──────────→     (same pipeline, different container)
+ML/Data Engineer   ──────────→     HLD components + ADRs + same Layer 0-3 (typed, gated, no notebooks)
 QA Engineer        ──────────→     test-specs.md + Gate Enforcement (IL-0..IL-3)
 Tech Lead          ──────────→     SDLC Specs + Phase Checkpoints
 Scrum Master       ──────────→     monke-status.md (and nothing of value was lost)
 DevOps             ──────────→     monke-fut.md says "lol not yet"
 ```
 
-The disciplines didn't vanish. They got **compressed into documents that agents execute and humans approve**. Five roles became four spec files and a dashboard. The org chart became a pipeline.
+The disciplines didn't vanish. They got **compressed into documents that agents execute and humans approve**. Six roles became four spec files and a dashboard. The org chart became a pipeline.
 
 And the human? The human went from writing code 8 hours a day to making fourteen decisions that actually matter.
 

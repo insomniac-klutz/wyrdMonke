@@ -160,7 +160,13 @@ Every boundary contract: upstream, downstream, error propagation.
 
 1. Write confirmed LLD to `monke-docs/lld/<component>.md`
 2. Write ADRs for non-obvious decisions to `monke-docs/decisions/`
-3. If boundary contracts changed during design → **⏸ PG-14**: update HLD, confirm with user
+3. If boundary contracts changed during design → **HLD amendment required**:
+   - Formulate directive: what boundary is wrong, what the LLD needs it to be, why
+   - Tell user: "HLD boundary mismatch discovered. Requesting amendment."
+   - Invoke `/monke-design:hld amend "<directive>"` (or execute amend flow inline)
+   - **⏸ PG-14** fires inside the amend flow — user confirms the HLD change
+   - After amend completes: re-read updated HLD boundary, verify LLD now aligns
+   - If amend rejected → record as OQ in `open-questions.md`, flag blocker, stop LLD finalization
 4. Copy team artifacts if Agent Teams used:
    - Reviewer violation log → LLD "Review Log" section
    - Clean up draft files

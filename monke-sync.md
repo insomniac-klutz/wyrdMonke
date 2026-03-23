@@ -168,3 +168,11 @@ If any specs were applied → suggest:
 
 If specs were skipped → note:
 - "Skipped specs may diverge from skill expectations over time. Consider reviewing them later."
+
+Check `.gitignore` — verify `CLAUDE.md` and `.claude/` are listed. If either is missing, warn the user:
+
+> "⚠ `CLAUDE.md` and `.claude/` contain project-specific AI instructions and should not be committed to your repo. Add them to `.gitignore`:"
+> ```
+> CLAUDE.md
+> .claude/
+> ```
