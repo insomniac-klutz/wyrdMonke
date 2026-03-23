@@ -6,7 +6,7 @@
 
 ### *monke write code, monke ship*
 
-> **[Return to monke was never about going backwards](monke-phil.md)** — *the manifesto for why monke replaced your org chart with four spec files and a banana*
+> **[Monke Phil](monke-phil.md)** — *the manifesto for why monke replaced your org chart with four spec files and a banana*
 
 ---
 
