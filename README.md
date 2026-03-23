@@ -1,8 +1,12 @@
-# 🐒 WyrdMonke
+<p align="center">
+  <img src="monke-owns/Gemini_Generated_Image_qfs0g4qfs0g4qfs0.png" alt="WyrdMonke" width="600" />
+</p>
+
+# WyrdMonke
 
 ### *monke write code, monke ship*
 
-> **[Five roles walked into a standup. None walked out.](monke-phil.md)** — *the manifesto for why monke replaced your org chart with four spec files and a banana*
+> **[Return to monke was never about going backwards](monke-phil.md)** — *the manifesto for why monke replaced your org chart with four spec files and a banana*
 
 ---
 
