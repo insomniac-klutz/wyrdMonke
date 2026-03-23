@@ -58,6 +58,9 @@ wyrdMonke/
 │   ├── test-run.md              # run it, watch it fail, categorize the grief, try again
 │   └── coverage.md              # find the untouched bananas and shame them into existence
 │
+├── monke-rage/                  # monke hunts what you're ignoring
+│   └── sonar.md                 # scan the codebase, find the rot, log the rage
+│
 ├── monke-docs/                  # the ancient texts
 │   ├── sdlc-specs.md            # the prophecy (connects all specs)
 │   ├── design-specs.md          # how monke thinks before monke builds
@@ -69,7 +72,8 @@ wyrdMonke/
 │   ├── open-questions.md        # the 3am hauntings (empty until you ask)
 │   ├── lld/                     # component blueprints (one per brain cell)
 │   ├── decisions/               # ADRs — receipts for every banana chosen
-│   └── checkpoints/             # proof monke finished the thing
+│   ├── checkpoints/             # proof monke finished the thing
+│   └── rage-run/                # sonar scan logs — receipts for every rot found
 │
 ├── LICENSE                      # Apache 2.0 — monke shares freely
 └── README.md                    # you are here. hello.
@@ -93,7 +97,7 @@ banana-X.X-bruised  # hotfix
 
 ## The Skills
 
-Fifteen rituals, organized by when monke needs them.
+Sixteen rituals, organized by when monke needs them.
 
 ### The Summoning
 
@@ -127,6 +131,12 @@ Fifteen rituals, organized by when monke needs them.
 | `/monke-implement:implement` | The Layer 0→3 pipeline. Types first (shape), then stubs (interface), then bodies interleaved with tests (behavior), then integration tests (proof). Each layer has a gate. No skipping. Resume at any layer when you come back tomorrow. |
 | `/monke-implement:checkpoint` | The final boss of each phase. Checks every component's test gates, runs system tests end-to-end, writes the checkpoint record, and demands your signature. PG-11 — the gate that never sleeps, never forgives, never skips. |
 
+### Rage — monke hunts (`monke-rage/`)
+
+| Skill | What it does |
+|-------|-------------|
+| `/monke-rage:sonar` | The codebase scanner with six modes of fury. `buggy` finds bugs, `improv` finds north stars, `renounce` finds dead weight, `haunt` finds security holes, `drift` finds spec-code divergence, `echo` finds dead code. Reads every file in scope, triages by severity, logs to `monke-docs/rage-run/`. Sonar doesn't fix — sonar finds. You fix. |
+
 ### Testing — monke proves it (`monke-test/`)
 
 | Skill | What it does |
@@ -142,8 +152,17 @@ Fifteen rituals, organized by when monke needs them.
 ### The Ritual Way (recommended)
 
 1. Grab the one ring:
+
+   **Linux/macOS:**
    ```bash
-   curl -o ~/.claude/commands/monke-init.md https://raw.githubusercontent.com/insomniac-klutz/wyrdMonke/trunk/monke-init.md
+   mkdir -p .claude/commands
+   curl -o .claude/commands/monke-init.md https://raw.githubusercontent.com/insomniac-klutz/wyrdMonke/trunk/monke-init.md
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   mkdir -Force ".claude\commands"
+   curl.exe -o ".claude\commands\monke-init.md" https://raw.githubusercontent.com/insomniac-klutz/wyrdMonke/trunk/monke-init.md
    ```
 2. Open your target project in Claude Code
 3. Whisper `/monke-init`
