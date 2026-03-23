@@ -122,15 +122,36 @@ For each placeholder group:
 
 ---
 
+## CLAUDE.md Sync
+
+After filling project-specs, check `CLAUDE.md` for consistency:
+
+1. Read `CLAUDE.md`. Compare stack references (languages, frameworks, tools, commands) against the values just confirmed in project-specs groups 2, 3, 6, 7, 8.
+2. If `<<<project_description>>>` or `<<<project_invariants>>>` placeholders still exist — fill them using the same detect-suggest-confirm flow as tinker Phase 3.
+3. If stack references are stale (e.g., CLAUDE.md says "npm" but project-specs now says "pnpm"), surface each mismatch and offer to update.
+4. If CLAUDE.md is already consistent — skip silently.
+
+**⏸ Pause** — show proposed CLAUDE.md changes (if any), get confirmation before applying.
+
+---
+
 ## Finalize
 
 1. Verify no `<<<` patterns remain:
    ```bash
-   grep -n '<<<' monke-docs/project-specs.md
+   grep -n '<<<' monke-docs/project-specs.md CLAUDE.md
    ```
    If any remain, surface them.
 
-2. Show summary: groups filled, placeholders replaced, any left as TBD.
+2. Show summary: groups filled, placeholders replaced, CLAUDE.md changes (if any), any left as TBD.
+
+3. Check `.gitignore` — verify `CLAUDE.md` and `.claude/` are listed. If either is missing, warn the user:
+
+   > "⚠ `CLAUDE.md` and `.claude/` contain project-specific AI instructions and should not be committed to your repo. Add them to `.gitignore`:"
+   > ```
+   > CLAUDE.md
+   > .claude/
+   > ```
 
 ---
 

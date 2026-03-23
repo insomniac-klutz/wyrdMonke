@@ -32,6 +32,11 @@ graph TD
         subgraph checkpoints_dir["checkpoints/"]
             CP["phase-N-checkpoint.md files"]
         end
+
+        subgraph rage_run_dir["rage-run/"]
+            RAGE_LOG["YYYY-MM-DD-mode-scope.md files"]
+            RAGE_TPL["template.md"]
+        end
     end
 
     subgraph design_skills["monke-design/"]
@@ -53,6 +58,10 @@ graph TD
         SK_TESTPLAN["test-plan.md"]
         SK_TESTRUN["test-run.md"]
         SK_COVERAGE["coverage.md"]
+    end
+
+    subgraph rage_skills["monke-rage/"]
+        SK_SONAR["sonar.md"]
     end
 
     %% CLAUDE.md is the entry point
@@ -123,6 +132,13 @@ graph TD
     SK_TESTPLAN -->|"writes plans in"| LLD
     SK_TESTRUN -->|"executes per"| TEST
     SK_COVERAGE -->|"measures per"| TEST
+
+    %% Rage skills scan everything
+    SK_SONAR -->|"scans"| HLD
+    SK_SONAR -->|"scans"| LLD
+    SK_SONAR -->|"scans"| OQ
+    SK_SONAR -->|"logs to"| RAGE_LOG
+    SK_SONAR -->|"uses template"| RAGE_TPL
 
     %% Status skill reads everything
     STATUS_SKILL -->|"scans"| HLD

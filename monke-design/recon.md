@@ -27,6 +27,16 @@ Read `monke-status.md` to verify current state. Then check:
 
 If any are missing → tell user: "Run `/monke-init` then `/monke-design:tinker` first." Stop.
 
+### Maturity Check
+
+Recon is designed for **production-ready or substantially complete codebases** — shipped products, mature repos, forked projects you're taking over.
+
+If the codebase looks like an unfinished shell (mostly boilerplate, stub files, placeholder logic, few or no tests, no meaningful business logic), warn the user:
+
+> "⚠ This codebase looks like a work-in-progress rather than a shipped product. Recon reverse-engineers design from existing architecture — there isn't enough here to extract a meaningful HLD. Consider running `/monke-design:hld` instead to build the design from scratch."
+
+**⏸ Ask user to confirm** they want to proceed with recon anyway, or switch to `/monke-design:hld`.
+
 ---
 
 ## Phase 1: Codebase Reconnaissance
