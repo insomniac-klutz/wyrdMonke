@@ -42,6 +42,7 @@ Skills are slash commands that orchestrate each SDLC phase. Run `/monke-init` to
 | `/monke-design:lld <component>` | Component LLD — ADaPT decomposition, Designer+Reviewer teams, PG-8 through PG-10 |
 | `/monke-design:adr <title> [component]` | Architecture Decision Record from LATS output |
 | `/monke-design:oq [action] [id]` | Open question management — list, triage, resolve |
+| `/monke-rage:sonar <mode> [scope]` | Scan codebase/docs — buggy, improv, renounce, haunt, drift, echo |
 | `/monke-implement:fill [group]` | Fill project-specs placeholder groups 1-8 |
 | `/monke-implement:implement <component> [layer]` | Layer 0→3 pipeline — types, stubs, bodies+tests, integration |
 | `/monke-implement:checkpoint <phase>` | Phase checkpoint — verify all IL-3s, run system tests, PG-11 sign-off |
