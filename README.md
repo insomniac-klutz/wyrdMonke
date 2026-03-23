@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="monke-owns/Gemini_Generated_Image_qfs0g4qfs0g4qfs0.png" alt="WyrdMonke" width="600" />
+  <img src="monke-owns/wyrdLogo.png" alt="WyrdMonke" width="600" />
 </p>
 
 # WyrdMonke
@@ -12,7 +12,7 @@
 
 ## What is this
 
-WyrdMonke is what happens when you give a monkey a clipboard, a software engineering degree, and access to Claude Code. It's a full SDLC-in-a-box — design specs, implementation pipelines, test gates, and 15 slash commands that walk your AI through the entire process so you don't have to explain "no, write the types first" for the fourteenth time.
+WyrdMonke is what happens when you give a monkey a clipbvoard, a software engineering degree, and access to Claude Code. It's a full SDLC-in-a-box — design specs, implementation pipelines, test gates, and 15 slash commands that walk your AI through the entire process so you don't have to explain "no, write the types first" for the fourteenth time.
 
 Clone it. Plug it in. Watch monke think before monke builds, for once.
 
