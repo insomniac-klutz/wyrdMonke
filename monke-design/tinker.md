@@ -50,13 +50,27 @@ Check if Claude Code Agent Teams are available:
 
 1. Look for `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in environment or `.claude/settings.json`
 2. Check Claude Code version `>= v2.1.32` (`claude --version`)
-3. Check if `tmux` is available (`which tmux`)
+
+Optional: `tmux` recommended for split-pane visibility, not required for teams to function.
+
+If the flag is not set, tell the user to merge this into their `.claude/settings.json`:
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+Then use `/exit` and resume the thread for it to take effect.
+
+**⏸ Wait for user response before proceeding.**
+
+After user accepts (and restarts) or declines, re-check `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` in the environment — the `/exit` breaks context so you must verify the current state:
 
 | Result | Action |
 |--------|--------|
-| All three present | Agent Teams enabled. Tell user: "HLD/LLD design will use Architect+Critic / Designer+Reviewer teams." |
-| Flag set but tmux missing | Teams available, tmux recommended. |
-| Flag not set | Teams not available. Single-session mode with subagents. |
+| Both present | Agent Teams enabled. Tell user: "HLD/LLD design will use Architect+Critic / Designer+Reviewer teams." |
+| Flag not set or version too old | Teams not available. Single-session mode with subagents. |
 
 Store agent teams status — later skills reference it.
 
@@ -117,12 +131,20 @@ Then follow the instructions in `/monke-implement:fill` inline (the user may not
    - Placeholders filled
    - Agent Teams status
 
-5. Suggest next steps:
+5. Check `.gitignore` — verify `CLAUDE.md` and `.claude/` are listed. If either is missing, warn the user:
+
+   > "⚠ `CLAUDE.md` and `.claude/` contain project-specific AI instructions and should not be committed to your repo. Add them to `.gitignore`:"
+   > ```
+   > CLAUDE.md
+   > .claude/
+   > ```
+
+6. Suggest next steps:
    - "Read `monke-docs/sdlc-specs.md` for the end-to-end workflow."
    - "Run `/monke-status:status` to see your project dashboard."
    - If existing code: "Run `/monke-design:recon` to reverse-engineer an HLD."
    - If fresh: "Run `/monke-design:hld` to create your HLD."
-   - "`git add monke-docs/ CLAUDE.md monke-mermaid.mmd monke-status.md && git commit -m 'Bootstrap WyrdMonke SDLC templates'`"
+   - "`git add monke-docs/ monke-mermaid.mmd monke-status.md && git commit -m 'Bootstrap WyrdMonke SDLC templates'`"
 
 ---
 
