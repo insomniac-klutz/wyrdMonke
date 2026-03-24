@@ -87,7 +87,7 @@ Determine the single next actionable step using this waterfall:
 
 3. Does hld.md have content beyond boilerplate?
    No  → existing code in project?
-         Yes → "Run /monke-design:recon to reverse-engineer HLD."
+         Yes → "Run /monke-recon:survey then /monke-recon:reconstruct to reverse-engineer HLD."
          No  → "Run /monke-design:hld to create your HLD."
    Yes ↓
 

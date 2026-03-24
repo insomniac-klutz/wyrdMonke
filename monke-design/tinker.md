@@ -123,7 +123,7 @@ Then follow the instructions in `/monke-implement:fill` inline (the user may not
    - Mark bootstrap checkboxes as complete
    - Set "Where We Are" to: `Phase: **Bootstrap complete — ready for HLD**`
    - Set "Next action" based on codebase type:
-     - Existing code → `/monke-design:recon`
+     - Existing code → `/monke-recon:survey`
      - Fresh init → `/monke-design:hld`
 
 4. Show summary:
@@ -142,7 +142,7 @@ Then follow the instructions in `/monke-implement:fill` inline (the user may not
 6. Suggest next steps:
    - "Read `monke-docs/sdlc-specs.md` for the end-to-end workflow."
    - "Run `/monke-status:status` to see your project dashboard."
-   - If existing code: "Run `/monke-design:recon` to reverse-engineer an HLD."
+   - If existing code: "Run `/monke-recon:survey` then `/monke-recon:reconstruct` to reverse-engineer an HLD."
    - If fresh: "Run `/monke-design:hld` to create your HLD."
    - "`git add monke-docs/ monke-mermaid.mmd monke-status.md && git commit -m 'Bootstrap WyrdMonke SDLC templates'`"
 

@@ -32,10 +32,12 @@ If not bootstrapped → tell user: "No WyrdMonke project found. Run `/monke-init
 | Category | Action | Why |
 |----------|--------|-----|
 | **Skills** (`.claude/commands/monke-*`) | Overwrite | Prompt templates — no user state |
-| **Core specs** (`design-specs.md`, `implementation-specs.md`, `test-specs.md`, `sdlc-specs.md`) | Diff + confirm | May have user modifications |
-| **Status template** (`status-template.md`) | Diff + confirm | Template only — user's `monke-status.md` is untouched |
-| **Artifacts** (`hld.md`, `lld/*.md`, `decisions/*.md`, `checkpoints/*.md`, `open-questions.md`) | NEVER | Your design work — hands off |
-| **Project files** (`CLAUDE.md`, `project-specs.md`, `monke-status.md`, `monke-mermaid.mmd`) | NEVER | Your configuration — hands off |
+| **Root commands** (`monke-*.md` at repo root) | Overwrite | Prompt templates — no user state |
+| **CLAUDE.md** (from `monke-CLAUDE.md`) | Diff + confirm | May have user modifications (filled placeholders) |
+| **Syncable specs** (auto-discovered `*.md` in `monke-docs/`) | Diff + confirm | May have user modifications |
+| **Protected artifacts** (`hld.md`, `lld/`, `decisions/`, `checkpoints/`, `open-questions.md`, `project-specs.md`, `rage-run/`, `rage-runs/`) | NEVER | Your design work — hands off |
+| **monke-mermaid.mmd** | Overwrite | Skill handoff graph — no user state |
+| **Project files** (`monke-status.md`) | NEVER | Your configuration — hands off |
 
 ---
 
@@ -58,52 +60,81 @@ Confirm / Adjust / Reject?
 
 ---
 
-## Phase 2: Update Skills
+## Phase 2: Update Skills & Commands
 
-Overwrite all skill directories in `.claude/commands/`:
+Auto-discover skill directories from the upstream clone:
 
 ```bash
-cp -r "$TMPDIR/monke-design/" .claude/commands/monke-design/
-cp -r "$TMPDIR/monke-implement/" .claude/commands/monke-implement/
-cp -r "$TMPDIR/monke-test/" .claude/commands/monke-test/
-cp -r "$TMPDIR/monke-status/" .claude/commands/monke-status/
+# Find all monke-* dirs that contain at least one .md file
+# Exclude monke-docs/ (specs) and monke-owns/ (assets)
+SKILL_DIRS=$(find "$TMPDIR" -maxdepth 1 -type d -name 'monke-*' \
+  ! -name 'monke-docs' \
+  ! -name 'monke-owns' \
+  -exec sh -c 'ls "$1"/*.md >/dev/null 2>&1 && basename "$1"' _ {} \;)
 ```
 
-**⏸ Decision gate** — show skill update plan (list files that will be overwritten):
+Auto-discover root-level command files (includes `monke-sync.md` itself):
+
+```bash
+# Find all root-level monke-*.md files, excluding monke-CLAUDE.md (handled in Phase 3)
+ROOT_CMDS=$(find "$TMPDIR" -maxdepth 1 -name 'monke-*.md' ! -name 'monke-CLAUDE.md' -exec basename {} \;)
+```
+
+For each discovered skill directory and root command, overwrite in `.claude/commands/`:
+
+```bash
+for DIR in $SKILL_DIRS; do
+  cp -r "$TMPDIR/$DIR/" .claude/commands/$DIR/
+done
+
+# Root commands
+for FILE in $ROOT_CMDS; do
+  cp "$TMPDIR/$FILE" .claude/commands/$FILE
+done
+
+# Skill handoff graph
+cp "$TMPDIR/monke-mermaid.mmd" ./monke-mermaid.mmd
+```
+
+**⏸ Decision gate** — show update plan (list discovered skill directories, root commands, and files that will be overwritten):
 
 Confirm / Adjust / Reject?
 
-- **Confirm** → overwrite all skill directories
-- **Adjust** → change which skill directories to update
-- **Reject** → skip skill update, proceed to Phase 3
+- **Confirm** → overwrite all discovered skill directories and root commands
+- **Adjust** → change which items to update
+- **Reject** → skip skill/command update, proceed to Phase 3
 
-Verify all skills landed:
+Verify all skills and commands landed:
 ```bash
-ls .claude/commands/monke-design/*.md
-ls .claude/commands/monke-implement/*.md
-ls .claude/commands/monke-test/*.md
-ls .claude/commands/monke-status/*.md
+for DIR in $SKILL_DIRS; do
+  ls .claude/commands/$DIR/*.md
+done
+for FILE in $ROOT_CMDS; do
+  ls .claude/commands/$FILE
+done
 ```
 
-Report: "Skills updated from `$BRANCH`. X files replaced."
+Report: "Skills & commands updated from `$BRANCH`. X directories, Y root commands, Z files replaced."
 
 ---
 
 ## Phase 3: Diff Specs
 
-For each core spec file:
+Auto-discover syncable spec files from the upstream clone:
 
+```bash
+# All .md files directly in monke-docs/, minus protected user artifacts
+PROTECTED="project-specs.md hld.md open-questions.md"
+SPEC_FILES=$(find "$TMPDIR/monke-docs" -maxdepth 1 -name '*.md' -exec basename {} \; \
+  | grep -v -F "$(printf '%s\n' $PROTECTED)")
 ```
-sdlc-specs.md
-design-specs.md
-implementation-specs.md
-test-specs.md
-status-template.md
-```
+
+For each discovered spec file:
 
 1. Compare `$TMPDIR/monke-docs/<file>` against `./monke-docs/<file>`
 2. If identical → skip, report "no changes"
-3. If different → show a summary of what changed (sections added, removed, or modified)
+3. If local file doesn't exist → flag as new upstream spec, offer to copy
+4. If different → show a summary of what changed (sections added, removed, or modified)
 
 **⏸ Decision gate** — for each changed spec, present diff summary:
 
@@ -118,11 +149,33 @@ Confirm / Adjust / Reject?
 - **Adjust** → show full diff before deciding, then re-ask
 - **Reject** → keep current version, leave untouched
 
-**NEVER touch these files regardless of diff:**
+**NEVER touch these files regardless of discovery:**
 - `project-specs.md` — user's stack bindings
 - `hld.md` — user's design
 - `open-questions.md` — user's questions
-- Anything in `lld/`, `decisions/`, `checkpoints/`
+- Anything in subdirectories (`lld/`, `decisions/`, `checkpoints/`, `rage-run/`, `rage-runs/`)
+
+### CLAUDE.md Sync
+
+Compare upstream `monke-CLAUDE.md` against local `CLAUDE.md`:
+
+1. If identical → skip, report "no changes"
+2. If local `CLAUDE.md` doesn't exist → flag as missing, offer to copy template
+3. If different → show a summary of what changed (sections added, removed, or modified), preserving user-filled placeholder content
+
+**⏸ Decision gate** — present diff summary:
+
+```
+CLAUDE.md has upstream changes:
+  - <summary of structural changes>
+  - User-filled sections (<<<placeholders>>>) will be preserved
+```
+
+Confirm / Adjust / Reject?
+
+- **Confirm** → merge structural changes, preserve user content in placeholder sections
+- **Adjust** → show full diff before deciding, then re-ask
+- **Reject** → keep current version, leave untouched
 
 ---
 
@@ -150,17 +203,21 @@ Present sync summary:
 WyrdMonke Sync Complete
 Branch: <branch>
 
-Skills: updated (13 files)
+Skills & Commands:
+  - <N> skill directories updated (<M> files total)
+  - <list each discovered skill dir and file count>
+  - <P> root commands updated
+  - <list each root command file>
+  - monke-mermaid.mmd: replaced
+
+CLAUDE.md: <applied | skipped | no changes>
+
 Specs:
-  - sdlc-specs.md: <applied | skipped | no changes>
-  - design-specs.md: <applied | skipped | no changes>
-  - implementation-specs.md: <applied | skipped | no changes>
-  - test-specs.md: <applied | skipped | no changes>
-  - status-template.md: <applied | skipped | no changes>
+  - <for each discovered spec file>: <applied | skipped | new | no changes>
 
 Untouched (your work):
-  - CLAUDE.md, project-specs.md, monke-status.md, monke-mermaid.mmd
-  - hld.md, lld/*.md, decisions/*.md, checkpoints/*.md, open-questions.md
+  - project-specs.md, monke-status.md
+  - hld.md, open-questions.md, lld/, decisions/, checkpoints/
 ```
 
 If any specs were applied → suggest:
