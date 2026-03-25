@@ -72,9 +72,22 @@ The first three enforce **shape**. The fourth enforces **purity** — logic sepa
 - Create all enum, model, and schema files from the LLD file map.
 - No logic, no method bodies — pure declarations and column/field definitions.
 - Models and schemas **frozen by default**. Define error types alongside data types.
+- **Versioned types:** For types serving versioned-artifact or data-dependent tools (design-specs S1.2): include artifact version pin and distributional expectations as declarative annotations. These are still pure declarations — no logic — but they encode contract stability metadata that Layer 2 and eval tests depend on. Example (language-agnostic):
+  ```
+  EmbeddingVector:
+    dimensions: 768             # pinned to model version
+    model_version: "v2.1"       # artifact version pin
+    value_range: [-1.0, 1.0]    # distributional expectation
+
+  LLMToolConfig:
+    model_id: "claude-sonnet-4-6"    # exact model version pin
+    max_tokens: 4096                  # output budget
+    temperature: 0.7                  # sampling config
+    prompt_template_version: "v2.3"   # procedural memory pin
+  ```
 - Verification: linter clean + all cross-module imports resolve.
 - If applicable: generate database migration from models, verify up + down.
-- Gate: **IL-0** — all types importable, models frozen, migration runs (if applicable), linter clean.
+- Gate: **IL-0** — all types importable, models frozen, version pins present (if applicable), migration runs (if applicable), linter clean.
 
 ### Layer 1: Interface Skeleton
 - Create all function/method stubs with full type annotations from LLD signatures.
@@ -86,19 +99,22 @@ The first three enforce **shape**. The fourth enforces **purity** — logic sepa
 
 ### Layer 2: Bodies + Unit Tests (interleaved)
 - Implement **pure functions first**, then IO shell that calls them.
+- **For components with versioned-artifact or data-dependent tools:** the pre/post-processing around the tool call is pure (prompt construction, feature extraction, input validation, output parsing, response scoring, metric computation). The tool call itself (LLM call, model inference, embedding search, feature store query, artifact loading) is IO shell. Decompose accordingly — the pure logic is trivially testable, the IO shell is thin.
 - For each function (in dependency order per LLD decomposition tree):
   1. Replace stub with real implementation.
   2. Write unit tests for that function per LLD test plan rows.
-  3. Run unit tests — must pass before moving to next function.
-  4. Run linter on modified files.
-- Gate: **IL-2** — all unit tests passing, linter clean, pure functions have no IO.
+  3. For functions with eval obligations: write unit-level eval tests (mocked artifact, fixture data).
+  4. Run unit tests + eval tests — must pass before moving to next function.
+  5. Run linter on modified files.
+- Gate: **IL-2** — all unit tests passing, eval tests passing (if applicable), linter clean, pure functions have no IO.
 
 ### Layer 3: Integration Tests + Verification
 - Write integration tests per LLD integration test plan.
-- Run full test suite (unit + integration).
+- **For components with eval obligations:** write integration-level eval tests (real artifact, test dataset, metric thresholds from LLD).
+- Run full test suite (unit + integration + eval).
 - Verify coverage meets project-defined threshold.
 - Update LLD test checklist with commit references.
-- Gate: **IL-3** — all tests passing, coverage met → ready for phase checkpoint.
+- Gate: **IL-3** — all tests passing (including eval), coverage met → ready for phase checkpoint.
 
 ### Layer Diagram
 
@@ -133,10 +149,10 @@ Design converged (e.g., PG-9/PG-10)
 
 | ID | After Layer | Verification | Proceeds When |
 |----|-------------|-------------|---------------|
-| IL-0 | 0 (Types) | Linter clean, all imports resolve, models frozen by default, migration up/down (if applicable) | Types correct |
+| IL-0 | 0 (Types) | Linter clean, all imports resolve, models frozen by default, version pins present (if applicable), migration up/down (if applicable) | Types correct |
 | IL-1 | 1 (Signatures) | Linter clean, downstream can import upstream, pure vs IO separated | Skeleton compilable |
-| IL-2 | 2 (Bodies) | All unit tests pass, linter clean, pure functions have no IO | Logic correct |
-| IL-3 | 3 (Integration) | Full suite green, coverage ≥ threshold, LLD checklist updated | → Phase checkpoint |
+| IL-2 | 2 (Bodies) | All unit tests pass, eval tests pass (if applicable), linter clean, pure functions have no IO | Logic correct |
+| IL-3 | 3 (Integration) | Full suite green (including eval), coverage ≥ threshold, LLD checklist updated | → Phase checkpoint |
 
 IL gates are lightweight self-verification (run commands, check output). They are NOT user-confirmation pause gates — the user confirms at the phase checkpoint gate defined in the design specs.
 
@@ -241,3 +257,4 @@ When an AI assistant performs implementation:
 | Pure function | Deterministic, no IO, no side effects. Same input → same output. |
 | Shell | Thin IO layer that calls pure functions and handles side effects. |
 | Result/error type | Return type encoding success or expected failure. Replaces exceptions for expected errors. |
+| Versioned type | Layer 0 type carrying an artifact version pin and optional distributional expectations. Still pure declaration. |

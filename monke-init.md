@@ -19,6 +19,8 @@ BRANCH="${ARGUMENTS:-trunk}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - `git` available on PATH
 - Internet access (clones from GitHub)
 - Project directory is the current working directory
@@ -46,33 +48,42 @@ Confirm / Adjust / Reject?
 
 ## Phase 2: Install Skills
 
-Install skills project-local at `.claude/commands/` so they're scoped to this project:
+Auto-discover skill directories from the upstream clone:
+
+```bash
+# Find all monke-* dirs that contain at least one .md file
+# Exclude monke-docs/ (specs) and monke-owns/ (assets)
+SKILL_DIRS=$(find "$TMPDIR" -maxdepth 1 -type d -name 'monke-*' \
+  ! -name 'monke-docs' \
+  ! -name 'monke-owns' \
+  -exec sh -c 'ls "$1"/*.md >/dev/null 2>&1 && basename "$1"' _ {} \;)
+```
+
+Install discovered skills project-local at `.claude/commands/`:
 
 ```bash
 mkdir -p .claude/commands
-cp -r "$TMPDIR/monke-design/" .claude/commands/monke-design/
-cp -r "$TMPDIR/monke-implement/" .claude/commands/monke-implement/
-cp -r "$TMPDIR/monke-test/" .claude/commands/monke-test/
-cp -r "$TMPDIR/monke-status/" .claude/commands/monke-status/
+for DIR in $SKILL_DIRS; do
+  cp -r "$TMPDIR/$DIR/" .claude/commands/$DIR/
+done
 ```
 
-**⏸ Decision gate** — show skill install plan (note if existing skills will be overwritten):
+**⏸ Decision gate** — show skill install plan (list discovered directories and note if existing skills will be overwritten):
 
 Confirm / Adjust / Reject?
 
-- **Confirm** → install skills to `.claude/commands/`
+- **Confirm** → install all discovered skills to `.claude/commands/`
 - **Adjust** → change which skill directories to install
 - **Reject** → skip skill install, proceed to Phase 3
 
-After copying, verify all 13 skills landed:
+After copying, verify skills landed:
 ```bash
-ls .claude/commands/monke-design/*.md
-ls .claude/commands/monke-implement/*.md
-ls .claude/commands/monke-test/*.md
-ls .claude/commands/monke-status/*.md
+for DIR in $SKILL_DIRS; do
+  ls .claude/commands/$DIR/*.md
+done
 ```
 
-Expected: 6 + 3 + 3 + 1 = 13 skill files.
+Report discovered directory count and total file count.
 
 ---
 
@@ -146,15 +157,18 @@ rm -rf "$TMPDIR"
 1. Verify files landed:
    ```bash
    ls monke-docs/ CLAUDE.md monke-mermaid.mmd monke-status.md
+   for DIR in $SKILL_DIRS; do
+     ls .claude/commands/$DIR/*.md
+   done
    ```
 
 2. Show summary:
-   - Skills installed: list the 4 directories + file counts
+   - Skills installed: list each discovered directory + file counts
    - Project files scaffolded: list what was copied
    - CLAUDE.md status: new / merged / separate
    - Branch used: `$BRANCH`
 
 3. Tell the user:
-   - "Skills installed. You now have 13 slash commands available."
+   - "Skills installed. You now have N slash commands available across M skill directories."
    - "Run `/monke-design:tinker` to detect your stack and fill in the project template."
-   - "Or if you have existing code: `/monke-design:recon` to reverse-engineer an HLD."
+   - "Or if you have existing code: `/monke-recon:survey` then `/monke-recon:reconstruct` to reverse-engineer an HLD."

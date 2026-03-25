@@ -11,7 +11,7 @@
 - Second positional: starting layer — `0` | `1` | `2` | `3` (default: `0`)
 - If component missing → read `monke-docs/lld/`, list available components with their implementation status, ask user to pick
 - If component not found → show available LLD files, ask user to pick
-- If layer arg given → resume from that layer (verify prior layers are checkpointed)
+- If layer arg given → resume from that layer (re-run IL gate commands from `project-specs.md` S8 for the prior layer to verify it actually passed — if it didn't, start from that layer instead)
 
 ```
 COMPONENT="${1:?Component name required}"
@@ -21,6 +21,8 @@ LAYER="${2:-0}"
 ---
 
 ## Prerequisites
+
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
 
 Read `monke-status.md`. Then verify:
 
@@ -158,7 +160,7 @@ Implement functions in **LLD decomposition dependency order** (leaves first, cal
 
 4. **Lint:** Run linter on modified files.
 
-If a test reveals an LLD design issue → record in `monke-docs/open-questions.md`, stop, surface to user. Do NOT silently fix the LLD.
+If a test reveals an LLD design issue → record in `monke-docs/open-questions.md`, **stop implementation**, surface to user with the OQ and options. **⏸ User must explicitly say "continue" or "redesign" before implementation resumes.** Do NOT silently fix the LLD.
 
 ### Commit Granularity
 
@@ -188,7 +190,7 @@ If gate fails → fix issues, re-run. Do NOT proceed to Layer 3.
 
 Before writing integration tests, verify both sides of each boundary exist:
 - Check upstream/downstream components' implementation status
-- If a neighbor is not yet implemented → defer that boundary's integration tests. Note which tests are deferred and why. Do NOT write integration tests with mock placeholders for real components.
+- If a neighbor is not yet implemented → defer that boundary's integration tests. Record deferred tests in the LLD test implementation checklist: mark the row as `deferred — <neighbor> not at IL-2` with the boundary name, so checkpoint can verify they're written when the neighbor catches up. Do NOT write integration tests with mock placeholders for real components.
 
 ### Steps
 
@@ -231,7 +233,7 @@ Add <component> integration tests (Layer 3)
 
 1. Verify all IL gates passed (IL-0 through IL-3).
 2. Update LLD test implementation checklist with final commit hashes.
-3. If LLD boundary contracts changed during implementation → **surface to user**. May require HLD update (PG-14).
+3. If LLD boundary contracts changed during implementation → **this is a hard gate**. Fire PG-14: formulate an amend directive, present the boundary change and blast radius to the user. User must confirm the HLD amendment (via `/monke-design:hld amend`) BEFORE this component proceeds to checkpoint. Do NOT allow checkpoint with unamended boundary drift.
 
 ### Suggest Next Steps
 

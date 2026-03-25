@@ -19,6 +19,8 @@ COMPONENT="${ARGUMENTS:?Component name required}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md`. Then verify:
 
 - `monke-docs/hld.md` has confirmed L3 (S3 component map exists with this component)
@@ -56,6 +58,7 @@ Execute ADaPT per `design-specs.md` S1.5:
 1. **DECOMPOSE** into sub-problems:
    - What are the distinct responsibilities?
    - For agentic: decompose each CoALA dimension separately
+   - **For components with versioned-artifact or data-dependent tools:** separate pure pre/post-processing (feature extraction, input validation, output parsing, metric computation) from artifact interaction (model inference, store query, artifact loading). If the component owns the artifact's lifecycle (training/rebuild), decompose that as a sub-problem with its own Layer 0-3 cycle — not as a separate system.
    - Surface the decomposition tree visibly
 
 2. **⏸ PG-8: Present decomposition to user. Confirm before sub-problems are attempted.**
@@ -102,6 +105,9 @@ Backend: per project-specs S10.2  |  ADR: NNN (if non-default)
 Type: traditional/agentic  |  Pattern: <name> (agentic)  |  ADR: NNN
 Upstream: <Model> from <module>  |  Downstream: <Model> to <module>
 Errors: <what crosses boundary>
+Tool subtypes: <static-contract | versioned-artifact | data-dependent> (if non-default)
+Version pins: <artifact: version> (if versioned-artifact)
+Eval thresholds: <metric: threshold> (if versioned-artifact or data-dependent)
 Phase: <N>  |  Test gate: pending
 ```
 
@@ -145,10 +151,18 @@ Minimum: 1 happy + 1 edge + 1 error per public function. Pure functions need no 
 
 Every boundary contract: upstream, downstream, error propagation.
 
+**Eval Test Plan (if versioned-artifact or data-dependent tools):**
+
+| # | Metric | Threshold | Test Dataset | Artifact Version | Gate |
+|---|--------|-----------|-------------|-----------------|------|
+
+Eval tests run within IL-2 (mocked artifact, fixture data) and IL-3 (real artifact, test dataset). No separate gate.
+
 **Test Implementation Checklist:**
 ```
 - [ ] Unit tests written + passing (commit: <hash>)
 - [ ] Integration tests written + passing (commit: <hash>)
+- [ ] Eval tests written + passing (commit: <hash>) (if applicable)
 - [ ] LLD test gate: PASSED — date
 ```
 

@@ -55,7 +55,7 @@ The skills package now covers design → implement → test, but the SDLC still 
 Missing skills:
 - `/monke-ops:release` — tagging, changelog from ADRs+checkpoints, deploy verification gates
 - `/monke-ops:rollback` — rollback triggers, canary/blue-green strategy
-- `/monke-ops:maintain` — HLD revision cadence, LLD staleness signals, tech debt tracking, when to re-run `/monke-design:recon`
+- `/monke-ops:maintain` — HLD revision cadence, LLD staleness signals, tech debt tracking, when to re-run `/monke-recon:survey`
 
 **What a fix looks like:** A fourth skill package (`monke-ops/`) with a `release-specs.md` or extension to `sdlc-specs.md`. Skills that carry the project past PG-11 into deployment, monitoring, and ongoing evolution.
 

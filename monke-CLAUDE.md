@@ -37,12 +37,28 @@ Skills are slash commands that orchestrate each SDLC phase. Run `/monke-init` to
 | `/monke-sync [branch]` | Update skills and specs from upstream without touching your design artifacts |
 | `/monke-status:status [action]` | Dashboard — show progress, rebuild from artifacts, find next step, list blockers |
 | `/monke-design:tinker` | Detect stack, fill project-specs and CLAUDE.md placeholders, initialize dashboard |
-| `/monke-design:recon [scope]` | Reverse-engineer HLD from existing codebase, surface open questions |
 | `/monke-design:hld [resume]` | Greenfield HLD creation — L1→L2→L3 with LATS, Agent Teams, PG-1 through PG-4 |
 | `/monke-design:lld <component>` | Component LLD — ADaPT decomposition, Designer+Reviewer teams, PG-8 through PG-10 |
 | `/monke-design:adr <title> [component]` | Architecture Decision Record from LATS output |
 | `/monke-design:oq [action] [id]` | Open question management — list, triage, resolve |
-| `/monke-rage:sonar <mode> [scope]` | Scan codebase/docs — buggy, improv, renounce, haunt, drift, echo |
+| `/monke-flash:spark` | Capture the idea — ask the right questions, produce a flash brief |
+| `/monke-flash:scope` | Draw the 80% line — what's in the MVP, what's out, what "done" looks like |
+| `/monke-flash:sketch` | Napkin architecture — core entities, stack picks, folder structure, one data flow |
+| `/monke-flash:blitz` | Build the happy path — scaffold, implement core flows, skip ceremony |
+| `/monke-flash:pulse` | Smoke test + feedback loop — run MVP, collect feedback, loop to blitz |
+| `/monke-flash:snap` | Freeze the MVP — tag it, manifest what was built/cut/shortcut, hand off to recon |
+| `/monke-recon:survey` | Deep codebase scan — map components, dependencies, test coverage, code quality |
+| `/monke-recon:reconstruct` | Reverse-engineer HLD and LLDs from existing code |
+| `/monke-recon:gaps` | Gap analysis against production requirements — prioritized by blast radius |
+| `/monke-recon:oqs` | Surface implicit decisions — every shortcut and default exposed |
+| `/monke-recon:roadmap` | Phased production roadmap from survey + gaps + OQs |
+| `/monke-rage:orchestra [scope]` | Pick a rage mode and scan — menu entrypoint for all 6 modes |
+| `/monke-rage:buggy [scope]` | Hunt bugs — logic errors, null bombs, swallowed exceptions, contract violations |
+| `/monke-rage:improv [scope]` | Hunt improvements — perf wins, pattern upgrades, type safety, north stars |
+| `/monke-rage:renounce [scope]` | Hunt redundancy — dead weight, duplication, cargo cult, over-abstraction |
+| `/monke-rage:haunt [scope]` | Hunt security — injection, auth gaps, secrets, OWASP top 10 |
+| `/monke-rage:drift [scope]` | Hunt divergence — spec says X, code does Y, status is lying |
+| `/monke-rage:echo [scope]` | Hunt dead code — unreachable paths, zombie imports, orphaned files |
 | `/monke-implement:fill [group]` | Fill project-specs placeholder groups 1-8 |
 | `/monke-implement:implement <component> [layer]` | Layer 0→3 pipeline — types, stubs, bodies+tests, integration |
 | `/monke-implement:checkpoint <phase>` | Phase checkpoint — verify all IL-3s, run system tests, PG-11 sign-off |
@@ -53,6 +69,26 @@ Skills are slash commands that orchestrate each SDLC phase. Run `/monke-init` to
 Cross-cutting rules:
 - **Pause gates:** Claude stops and waits for user confirmation at every decision point.
 - **Status tracking:** Every skill reads `monke-status.md` on entry and updates it on exit.
+
+## Agent Teams
+
+**Agent teams are the default mode of operation.** Always decompose non-trivial tasks into parallel subagents. Rules:
+
+- Spawn specialized agents (Explore, Plan, general-purpose, etc.) instead of doing heavy work in the main context.
+- Run independent agents in parallel within a single message — never sequentially.
+- Use `isolation: "worktree"` for agents that write code.
+- Use `run_in_background: true` for long-running work.
+- Main context is for coordination, synthesis, and user communication only.
+- **Create custom agent orchestration and prompts freely** — invent workflows and pipelines as the task demands.
+- **Skills reference agent teams.** When a skill says "use agent teams," "spawn parallel scanners," or "if >N files/components, parallelize" — it means: use the Claude Code Agent tool. For code-writing agents, use `isolation: "worktree"`. For read-only scans, agents can share the workspace. The skill provides the orchestration logic; the Agent tool provides the mechanism.
+
+### Agent Teams Fail Gate
+
+**Every skill MUST verify agent teams are enabled before proceeding.** On entry, read `CLAUDE.md` and confirm the Agent Teams section exists with the parallel subagent directive. If missing or absent:
+
+- **Stop immediately.** Do not proceed with the skill.
+- Tell the user: "Agent teams are not configured. WyrdMonke skills require agent teams to operate. Run `/monke-sync` to pull the latest template, or copy the Agent Teams section from `monke-CLAUDE.md` into your project's `CLAUDE.md`."
+- This is a **hard gate** — no skill runs without it.
 
 ## Commit Format
 
