@@ -19,6 +19,8 @@ PHASE="${ARGUMENTS:?Phase number required}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md`. Then verify:
 
 - `monke-docs/hld.md` S8 defines this phase with its component list
@@ -75,7 +77,7 @@ System tests verify end-to-end HLD data flows (S4) that become testable in this 
 5. Verify all pass.
 
 If system test fails:
-- Trace failure to the boundary where it breaks per `design-specs.md` S11.3 Gate Failure Protocol
+- **Trace procedure** (per `design-specs.md` S11.3): read the stack trace or assertion failure, identify which boundary the data crossed when it broke, find that boundary in HLD S7, then locate the two components on either side. Run the integration test for that boundary — if it passes, the bug is in end-to-end wiring; if it fails, the bug is in the component that owns the contract.
 - If integration-level issue → fix at component level, re-run
 - If persistent (>2 cycles) → **stop and surface to user per PG-13**
 
@@ -142,7 +144,7 @@ Confirm / Adjust / Reject?
 
 - **Confirm** → proceed to Phase 4 (Finalize)
 - **Adjust** → user specifies changes, re-verify affected items
-- **Reject** → record rejection reason, status remains BLOCKED
+- **Reject** → record rejection in the checkpoint file (`monke-docs/checkpoints/phase-<N>-checkpoint.md`, set Status: REJECTED, append rejection reason). Update `monke-status.md` Phase Checkpoints table to BLOCKED. Recovery: user must fix the cited issues, re-run the failing component through `/monke-implement:implement <component> <layer>`, then re-invoke `/monke-implement:checkpoint <N>` to re-verify from Phase 1.
 
 Do NOT proceed without explicit user confirmation. Do NOT interpret silence as confirmation.
 
@@ -181,3 +183,15 @@ On completion, update `monke-status.md`:
 - If next phase components have LLDs → "Next action" points to `/monke-implement:implement <component>`
 - If all phases complete → "Where We Are" = "All phases complete"
 - Bump `Updated:` line with current date and `/monke-implement:checkpoint`
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Skip PG-11 user sign-off | Refuse. PG-11 is NEVER skippable. Present, pause, wait. |
+| Run checkpoint with deferred integration tests still outstanding | Refuse. Verify deferred tests were written and passing first. |
+| Allow architectural drift through checkpoint | Refuse. If boundary contracts changed, fire PG-14 before checkpoint. |
+| Interpret silence as confirmation | Refuse. Explicit "confirm" required. |
+| Weaken system tests to pass the gate | Refuse. Fix the code or fix the design. |

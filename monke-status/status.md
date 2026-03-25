@@ -22,6 +22,8 @@ ACTION="${ARGUMENTS:-show}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Verify `monke-status.md` exists at project root (not this skill file — the project's status dashboard).
 
 - If it exists → read it
@@ -86,7 +88,7 @@ Determine the single next actionable step using this waterfall:
    Yes ↓
 
 3. Does hld.md have content beyond boilerplate?
-   No  → existing code in project?
+   No  → existing code in project? (glob for source files: *.py, *.ts, *.js, *.go, *.rs, *.java, *.rb, *.cs — exclude node_modules, vendor, .git, build dirs)
          Yes → "Run /monke-recon:survey then /monke-recon:reconstruct to reverse-engineer HLD."
          No  → "Run /monke-design:hld to create your HLD."
    Yes ↓
@@ -96,12 +98,12 @@ Determine the single next actionable step using this waterfall:
    No  ↓
 
 5. Any components in HLD S3 without an LLD file?
-   Yes → Pick first by phase order.
+   Yes → Pick first by phase order (HLD S8 Phase Plan, dependency sequence).
          "Run /monke-design:lld <component> to design <component>."
    No  ↓
 
 6. Any LLD-complete components not yet implemented (no source files)?
-   Yes → Pick first by phase order.
+   Yes → Pick first by phase order (HLD S8 Phase Plan, dependency sequence).
          "Run /monke-implement:implement <component> to start building."
    No  ↓
 
