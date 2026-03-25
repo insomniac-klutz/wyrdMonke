@@ -21,6 +21,8 @@ SCOPE="${ARGUMENTS:-}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - **Source code exists.** Something to reconstruct from. No code, no recon.
 - **`monke-docs/` exists.** Run `/monke-init` first if it doesn't. Orchestra needs somewhere to write.
 
@@ -34,7 +36,7 @@ Before doing anything, check for existing recon artifacts. Orchestra picks up wh
 |----------|---------|--------|
 | `monke-docs/recon/recon-survey.md` | yes | Skip Phase 1 |
 | `monke-docs/hld.md` (with `Source: reverse-engineered` header) | yes | Skip Phase 2 HLD |
-| `monke-docs/lld/*.md` | yes (all components covered) | Skip Phase 2 LLDs |
+| `monke-docs/lld/*.md` | yes — cross-check against HLD S3 component list; ALL components must have LLDs | Skip Phase 2 LLDs. If only some LLDs exist, skip to Phase 2 LLDs and reconstruct only the missing components. |
 | `monke-docs/recon/recon-gaps.md` | yes | Skip Phase 3 |
 | `monke-docs/open-questions.md` (populated, not template) | yes | Skip Phase 4 |
 | `monke-docs/recon/recon-roadmap.md` | yes | **"Already planned. Nothing to orchestrate."** Stop. |

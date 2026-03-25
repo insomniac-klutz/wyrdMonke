@@ -18,6 +18,8 @@
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md` to verify current state. Then check:
 
 - **`monke-docs/recon/recon-survey.md` exists** — need the raw inventory. If missing → "Run `/monke-recon:survey` first." Stop.

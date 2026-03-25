@@ -21,6 +21,8 @@ COMPONENT="${2:-}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md` to verify current state. Then check:
 
 - **`monke-docs/recon/recon-survey.md` exists** — this is the primary input. If missing → "Run `/monke-recon:survey` first. Can't blueprint what hasn't been mapped." Stop.
@@ -179,7 +181,7 @@ Mark each function/module with a maturity tag:
 
 ### 2.3 All Mode
 
-If mode is `all`: iterate through every component in HLD S3. Use agent teams if >3 components — assign one agent per container for parallel LLD reconstruction.
+If mode is `all`: iterate through every component in HLD S3. Use agent teams if >3 components — group components by their parent container (HLD S2), assign one agent per container for parallel LLD reconstruction. Each agent reconstructs all components within its container.
 
 ---
 

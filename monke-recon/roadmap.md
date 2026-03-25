@@ -18,6 +18,8 @@
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md` to verify current state. Then check ALL of these:
 
 - **`monke-docs/recon/recon-survey.md` exists** — the inventory. If missing → "Run `/monke-recon:survey` first." Stop.
@@ -183,10 +185,10 @@ Per component per phase. These are rough estimates, not commitments. Honesty ove
 
 | Size | Meaning |
 |------|---------|
-| `small` | A focused session. Hours, not days. One or two files. |
-| `medium` | A solid day of work. Multiple files, some complexity. |
-| `large` | Multiple days. Touches several components or requires careful refactoring. |
-| `xl` | A week or more. Significant architectural work, possibly requiring design iteration. |
+| `small` | A focused session. ~1-3 hours. One or two files. |
+| `medium` | A solid day of work. ~4-8 hours. Multiple files, some complexity. |
+| `large` | Multiple days. ~2-4 days. Touches several components or requires careful refactoring. |
+| `xl` | A week or more. ~5-10 days. Significant architectural work, possibly requiring design iteration. |
 
 **Totals per phase:**
 ```markdown
