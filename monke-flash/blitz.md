@@ -18,6 +18,8 @@ TARGET="${ARGUMENTS:-all}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - `monke-docs/flash/flash-arch.md` exists (run `/monke-flash:sketch` first)
 - `monke-docs/flash/flash-scope.md` exists
 

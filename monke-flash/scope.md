@@ -13,6 +13,8 @@
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - `monke-docs/flash/flash-brief.md` exists (run `/monke-flash:spark` first)
 
 ---
@@ -138,3 +140,14 @@ Flows: <N> in | <M> deferred | <K> killed
 Next: `/monke-flash:sketch`
 ```
 Bump `Updated:` to today, `by /monke-flash:scope`
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Keep everything in scope ("we need all of it") | Refuse. Draw the 80% line. If everything is in, nothing is cut, and scope is meaningless. |
+| Add auth/permissions/admin to MVP scope | Refuse. Hardcode a user. Auth is a feature, not a prerequisite. |
+| Skip the OUT list | Refuse. Explicit deferred vs killed prevents scope creep during blitz. |
+| Lock scope without user confirmation | Refuse. Scope is a contract. The user signs it. |

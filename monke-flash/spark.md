@@ -7,11 +7,14 @@
 ## Arguments
 
 `$ARGUMENTS` parsing:
-- None. This is a conversation skill.
+- None when invoked standalone. This is a conversation skill.
+- When invoked via `/monke-flash:orchestra` with a napkin argument, the orchestra skips the conversational rounds and drafts `flash-brief.md` directly from the napkin. Spark itself does not parse arguments — orchestra handles the bypass.
 
 ---
 
 ## Prerequisites
+
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
 
 - `monke-docs/` directory exists (run `/monke-init` first if missing)
 - No existing `monke-docs/flash/flash-brief.md` — if one exists, warn: "A flash brief already exists. Continuing will overwrite it." **Wait for confirmation.**
@@ -136,3 +139,14 @@ On completion, update `monke-status.md`:
   Next: `/monke-flash:scope`
   ```
 - Bump `Updated:` to today, `by /monke-flash:spark`
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Dump all questions at once | Refuse. One round at a time. Spark is a conversation, not a questionnaire. |
+| Skip to code without a brief | Refuse. Garbage in, garbage out. The brief is the contract. |
+| Write the brief without user confirmation | Refuse. Present, pause, confirm. The user owns the vision. |
+| Scope-creep during spark (add features, plan architecture) | Refuse. Spark captures intent. Scope cuts. Sketch architects. Stay in your lane. |

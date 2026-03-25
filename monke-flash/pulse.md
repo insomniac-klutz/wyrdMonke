@@ -18,6 +18,8 @@ TARGET="${ARGUMENTS:-all}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - Working code from `/monke-flash:blitz` (at least one flow marked "done")
 - `monke-docs/flash/flash-scope.md` exists (for success criteria)
 
@@ -119,3 +121,14 @@ Flows passing: <N>/<total>
 Next: `/monke-flash:snap` or `/monke-flash:pulse` (if still iterating)
 ```
 Bump `Updated:` to today, `by /monke-flash:pulse`
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Skip pulse and go straight to snap | Refuse. Run it, show it. Untested MVPs are assumptions, not products. |
+| Gold-plate during pulse (add features, refactor) | Refuse. Pulse fixes what's broken. Everything else is defer or scope. |
+| Loop forever without convergence check | Refuse. Iteration 4+ means scope was wrong — suggest re-running `/monke-flash:scope`. |
+| Auto-categorize feedback without user input | Refuse. Present the buckets, let the user sort. Monke suggests, human decides. |
