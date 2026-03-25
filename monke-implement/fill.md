@@ -19,6 +19,8 @@ GROUP="${ARGUMENTS:-all}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md`. Verify `monke-docs/project-specs.md` exists.
 
 If called from `/monke-design:tinker`, a detection summary (languages, frameworks, tools found) should be available in conversation context. Use it to suggest values.
@@ -160,3 +162,15 @@ After filling project-specs, check `CLAUDE.md` for consistency:
 On completion, update `monke-status.md`:
 - Update Bootstrap section: `- [x] Project-specs filled (N/8 groups) — <date>`
 - Bump `Updated:` line
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Leave placeholders as TBD without asking | Refuse. Detect, suggest, confirm — every placeholder gets a real attempt. |
+| Fill placeholders without user confirmation | Refuse. Present the suggestion, wait for yes. Every group gets a pause. |
+| Modify project-specs outside of fill's scope | Refuse. Fill replaces `<<<placeholders>>>` — it doesn't rewrite spec sections. |
+| Skip CLAUDE.md sync after filling project-specs | Warn. Stack references may diverge. Offer to sync. |
+| Force-add `.claude/` or `CLAUDE.md` to git | Refuse. Warn if not in `.gitignore`, but never stage them. |

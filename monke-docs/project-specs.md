@@ -113,6 +113,8 @@ Maps abstract IL gate verifications to <<<project_name>>> commands:
 | Coverage tool | <<<coverage_tool>>> |
 | Coverage threshold | <<<coverage_threshold>>> |
 | Shared fixture file | <<<shared_fixture_file>>> |
+| Eval metric library | <<<eval_metric_library>>> |
+| Eval test dataset dir | <<<eval_test_dataset_dir>>> |
 
 ---
 
@@ -160,3 +162,16 @@ Maps design specs pause gates to <<<project_name>>>-specific artifacts:
 | PG-14 (HLD revision from LLD) | `monke-docs/hld.md` (updated section) |
 | ADRs | `monke-docs/decisions/NNN-slug.md` |
 | Open questions | `monke-docs/open-questions.md` |
+
+### 10.6 AI & Data Science Infrastructure (Optional)
+
+If the project uses versioned-artifact or data-dependent tools (design-specs S1.2) — LLM model versions, NLP pipeline artifacts, CV model weights, embedding indices, or any artifact that changes when retrained — bind these:
+
+| Concept | <<<project_name>>> Binding |
+|---------|-------------------|
+| Model registry | <<<model_registry>>> |
+| Feature store | <<<feature_store>>> |
+| Experiment tracker | <<<experiment_tracker>>> |
+| Eval metric thresholds | <<<eval_metric_thresholds>>> |
+
+Same `<<<placeholder>>>` convention. If the project has no versioned-artifact or data-dependent components, leave this section empty or delete it.

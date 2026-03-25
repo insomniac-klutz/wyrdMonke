@@ -4,7 +4,7 @@ Project: <<<project_name>>> | Updated: <<<date>>> by /monke-design:tinker
 ## Where We Are
 
 Phase: **Bootstrap complete — ready for HLD**
-Next action: `/monke-design:hld` (or `/monke-design:recon` if existing codebase)
+Next action: `/monke-design:hld` (or `/monke-recon:reconstruct` if existing codebase)
 Blockers: none
 
 ---
