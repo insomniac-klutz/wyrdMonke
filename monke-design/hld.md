@@ -29,7 +29,7 @@ Read `monke-status.md`. Then verify:
 
 If bootstrap incomplete → tell user: "Run `/monke-init` then `/monke-design:tinker` first." Stop.
 
-If existing code detected and no HLD exists → suggest: "You have existing code. Consider `/monke-design:recon` to reverse-engineer an HLD instead."
+If existing code detected and no HLD exists → suggest: "You have existing code. Consider `/monke-recon:reconstruct` to reverse-engineer an HLD instead."
 
 ---
 
@@ -123,6 +123,7 @@ Read confirmed L1 scope. For each capability in scope:
 1. Propose containers per `design-specs.md` S5.1 S2:
    - Name, tech, backend language, one-sentence responsibility
    - Container type tag: `traditional` or `agentic`
+   - Apply the Agentic Candidacy Heuristic (`design-specs.md` S1.2) when choosing the type tag: if the container selects tools at runtime, handles non-deterministic inputs, or runs multi-step feedback loops — it is an agentic candidate. If it consumes any versioned-artifact or data-dependent tool, default to `agentic`. LATS both options at PG-5. Do not default to `traditional` without evaluating.
 2. Communication protocols between containers
 3. Deploy topology
 4. Database instances + connection strategy per `project-specs.md` S10.1
@@ -168,11 +169,16 @@ Per container from L2:
    Pattern: <Anthropic pattern>
    Loop: observe → retrieve → reason → execute → loop
    Memory: working(<budget>), episodic(<store>), semantic(<store>), procedural(<location>)
-   Actions: internal(<strategies>), external(<tools>), boundaries(<cannot do>)
+   Actions: internal(<strategies>), external(<tools: subtype>), boundaries(<cannot do>)
    Stops when: <condition>
    Human-in-loop: <where>
+   # If any tool is versioned-artifact or data-dependent (design-specs S1.2):
+   Version pins: <artifact: version>
+   Eval thresholds: <metric: threshold>
+   Drift thresholds: <metric: threshold> (data-dependent only)
    ```
-3. LATS at decomposition branches (PG-5 per branch)
+3. **Tool-type LATS:** For each external capability this component needs (API call, model inference, LLM call, data query, MCP tool, etc.) — LATS whether it should be a tool in the agent's action space vs hardcoded logic. If the capability's output is non-deterministic, version-dependent, or context-dependent, it is a tool. Classify per `design-specs.md` S1.2 tool taxonomy. Skip for trivially deterministic operations (string formatting, arithmetic).
+4. LATS at decomposition branches (PG-5 per branch)
 
 **⏸ PG-3: Present L3 component map. Confirm / Adjust / Reject?**
 
@@ -184,10 +190,10 @@ Per container from L2:
 
 Build from L3 contracts:
 
-| Upstream | Contract | Downstream | Error Type | Serialization | Status |
-|----------|----------|------------|------------|---------------|--------|
+| Upstream | Contract | Downstream | Error Type | Serialization | Stability | Status |
+|----------|----------|------------|------------|---------------|-----------|--------|
 
-Status is `planned` for all (no implementation yet in greenfield).
+Status is `planned` for all (no implementation yet in greenfield). Stability: `static` (default — omit for standard contracts) | `versioned(<artifact>, <pin>)` | `data-dependent(<baseline>)`.
 
 ### Lead Audits Boundary Matrix
 
@@ -210,6 +216,8 @@ Group components into implementation phases by dependency order:
 ```
 
 Test gate status: `pending` for all in greenfield.
+
+For components with versioned-artifact or data-dependent tools: note eval obligations in the phase plan. Eval tests run within IL-2 and IL-3 — no separate phase or gate.
 
 ### Data Flows (S4)
 
