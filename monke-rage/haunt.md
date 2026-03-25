@@ -74,7 +74,7 @@ Present findings grouped by severity (critical first). Finding IDs: `H-NNN`. Eac
 
 ## Phase 5: Save Rage Run
 
-Write to `monke-docs/rage-run/<YYYY-MM-DD>-haunt-<short-scope>.md`. Use template at `monke-docs/rage-run/template.md`. Create directory if needed. **Confirm filename.**
+Write to `monke-docs/rage-runs/<YYYY-MM-DD>-haunt-<short-scope>.md`. Use template at `monke-docs/rage-run/template.md`. Create directory if needed. **Confirm filename.**
 
 ---
 
