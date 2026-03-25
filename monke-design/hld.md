@@ -21,6 +21,8 @@ DIRECTIVE="${ARGUMENTS#* }"         # rest (for amend)
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md`. Then verify:
 
 - `monke-docs/project-specs.md` has no `<<<` remaining (stack is locked)

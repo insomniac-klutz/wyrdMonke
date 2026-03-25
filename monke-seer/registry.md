@@ -21,6 +21,8 @@ If missing → read HLD S3, list components with versioned-artifact tools, ask u
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - Component exists in HLD S3 with at least one versioned-artifact tool in its CoALA summary
 - Read `monke-status.md` and the component's HLD entry
 

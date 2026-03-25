@@ -23,6 +23,8 @@ If either missing → ask. "Which component? And what's the question — which m
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - Component exists in HLD S3 with at least one versioned-artifact tool
 - Data source profiled (`/monke-seer:profile`) — experiments without profiled data are blind taste tests
 - `monke-docs/decisions/` directory exists

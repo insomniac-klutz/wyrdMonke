@@ -12,6 +12,8 @@ Reads the dashboard, sniffs for components that need data profiling, experiments
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md`. Then read `monke-docs/hld.md` (if it exists) to understand what components are in play.
 
 ---

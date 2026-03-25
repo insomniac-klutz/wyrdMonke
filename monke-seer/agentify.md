@@ -21,6 +21,8 @@ If missing → read HLD S3, list all components with their type tags (`tradition
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - HLD exists with confirmed L3 (S3 component map)
 - Target component exists in HLD S3
 - Read `monke-status.md` for pipeline context

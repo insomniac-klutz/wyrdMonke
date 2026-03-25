@@ -12,6 +12,12 @@ Orchestra runs a continuous **read → diagnose → recommend → confirm → ex
 
 ---
 
+## Prerequisites
+
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
+---
+
 ## The Loop
 
 1. **Read** `monke-status.md` — current test state across all components. LLDs table, Test Gates table, Implementation table, Phase Checkpoints.

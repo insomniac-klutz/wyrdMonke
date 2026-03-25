@@ -20,6 +20,8 @@ COMPONENT="${ARGUMENTS:?Component name required}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 Read `monke-status.md`. Then verify:
 
 - `monke-docs/lld/${COMPONENT}.md` exists with confirmed design (PG-9 passed — check LLDs table: Design column is `done` or has checkmark)

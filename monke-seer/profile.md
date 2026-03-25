@@ -20,6 +20,8 @@ If missing → read HLD S3, list components with versioned-artifact or data-depe
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - An HLD exists with at least one component that uses a versioned-artifact or data-dependent tool (design-specs S1.2)
 - That component has a data source it hasn't tasted yet
 - Read `monke-status.md` for context
