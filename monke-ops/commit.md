@@ -131,23 +131,76 @@ User can:
 
 ---
 
-## Phase 3: Execute Commits
+## Phase 3: Log Entry
+
+After groups are confirmed, generate a `monke-log.md` entry before executing commits.
+
+### 3.1 Read Current Version
+
+Read `monke-log.md` and find the latest version number at the top of the log (the first `## <version>` heading, e.g., `0.5`).
+
+### 3.2 Bump Version
+
+Auto-increment the minor version: `0.5` → `0.6`.
+
+Ask the user:
+
+```
+⏸ Current version: 0.5
+  Next version: 0.6 (minor bump)
+
+  Bump major version instead? (e.g., 0.5 → 1.0) [y/N]
+```
+
+If user says yes → bump to next major (e.g., `0.5` → `1.0`, `1.3` → `2.0`).
+
+### 3.3 Generate Entry
+
+Build a structured log entry from the confirmed commit groups:
+
+```markdown
+## <version> — <YYYY-MM-DD> — <theme>
+```
+
+- **Version:** the bumped version from 3.2
+- **Date:** today's date
+- **Theme:** a short, punchy tagline synthesized from the commit groups (match the irreverent tone of existing entries)
+
+Categorize each group's files under `### Added` or `### Changed` based on their git status:
+- New files (`A`, `??`) → **Added**
+- Modified files (`M`) → **Changed**
+- Deleted files (`D`) → **Changed** (note removal)
+- Renamed files (`R`) → **Changed** (note rename)
+
+Each bullet should reference the file/artifact and include the commit message as context.
+
+### 3.4 Insert & Confirm
+
+Insert the new entry at the top of the log — directly after the header and tagline (`> *every banana...*`), before the first existing version entry. Prepend `---` separator.
+
+Present the draft entry to the user:
+
+```
+⏸ Proposed log entry for monke-log.md:
+
+<draft entry>
+
+Confirm / Adjust / Skip?
+```
+
+**⏸ Wait for user to confirm the log entry before proceeding to commits.**
+
+If confirmed, write the entry to `monke-log.md`. The log entry file change is included in the first commit group automatically — it does not create its own separate commit.
+
+---
+
+## Phase 4: Execute Commits
 
 Process groups one at a time, in order. For each group:
 
-### 3.1 Stage
+### 4.1 Confirm
 
-Stage only the files in this group:
-
-```bash
-git add <file1> <file2> ...
-```
-
-For deleted files: `git add` handles deletions. For renamed files: ensure both old and new paths are staged.
-
-### 3.2 Confirm
-
-Present the staged diff summary and commit message:
+Present the diff summary and commit message for the group:
 
 ```
 ⏸ Commit <N>/<total>: "<commit message>"
@@ -155,28 +208,32 @@ Present the staged diff summary and commit message:
 Files:
   <file list>
 
-Staged diff summary:
+Diff summary:
   <N> files changed, <N> insertions(+), <N> deletions(-)
 
 Commit / Adjust message / Skip / Abort remaining?
 ```
 
-- **Commit** → execute `git commit -m "<message>"`
+- **Commit** → stage and commit in a single command (see 4.2)
 - **Adjust message** → user provides new message, re-present
-- **Skip** → unstage these files (`git reset HEAD <files>`), move to next group
-- **Abort remaining** → unstage these files, stop. Already-committed groups are preserved.
+- **Skip** → move to next group, files remain unstaged
+- **Abort remaining** → stop. Already-committed groups are preserved.
 
-### 3.3 Commit
+### 4.2 Stage & Commit
+
+Stage and commit in a single command:
 
 ```bash
-git commit -m "<message>"
+git add <file1> <file2> ... && git commit -m "<message>"
 ```
+
+For deleted files: `git add` handles deletions. For renamed files: ensure both old and new paths are included.
 
 Report the commit hash. Move to next group.
 
 ---
 
-## Phase 4: Report
+## Phase 5: Report
 
 After all groups processed (committed, skipped, or aborted), present summary:
 
