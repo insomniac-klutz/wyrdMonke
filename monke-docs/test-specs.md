@@ -10,6 +10,7 @@
 |------|-------|-------------|----------|---------------|
 | **Unit** | Single function/class in isolation | LLD creation (PG-10) | After each function implemented (Layer 2) | IL-2 |
 | **Integration** | Boundary contract between components | LLD creation (PG-10) | After component + neighbors available (Layer 3) | IL-3 |
+| **Eval** | Metric threshold for versioned-artifact or data-dependent components | LLD creation (PG-10) | With unit (IL-2, mocked artifact) and integration (IL-3, real artifact) | IL-2 / IL-3 (no separate gate) |
 | **System** | End-to-end data flow (HLD S4) | Phase planning (before phase starts) | After all phase components pass IL-3 | PG-11 (phase checkpoint) |
 
 ---
@@ -29,6 +30,17 @@
 - Cross-language boundaries: serialization round-trip verification.
 - Agentic components: memory write→read consistency, tool call contracts, agent-to-agent message formats.
 - **Isolation:** both sides of the boundary under test are REAL. Everything else mocked. Database tests use a real instance, not an in-memory substitute.
+
+### Eval Tests
+
+Applies only to components whose tools include versioned-artifact or data-dependent subtypes (design-specs S1.2).
+
+- Assertions are **metric thresholds** (accuracy ≥ X, F1 ≥ Y, coherence ≥ Z, hallucination rate ≤ W, latency p99 ≤ V, drift score ≤ U, cost per call ≤ T), not exact-match.
+- **Unit-level eval (runs at IL-2):** mocked artifact, fixture dataset. Verifies pre/post-processing logic produces expected metrics. Tests the function's correctness, not the artifact's quality.
+- **Integration-level eval (runs at IL-3):** real artifact, test dataset. Verifies the actual artifact meets the metric threshold defined in the LLD.
+- Eval metrics are defined in the LLD test plan alongside unit and integration tests — not in a separate document.
+- A failing eval metric blocks the gate exactly like a failing test. No weakening thresholds to pass.
+- Components with only static-contract tools have no eval obligations.
 
 ### System Tests
 
@@ -51,6 +63,8 @@
 | External third-party APIs | Mocked | Mocked | Mocked / sandbox |
 | Filesystem | Mocked | Mocked | Real |
 | LLM calls | Mocked | Mocked | Mocked / sandbox |
+| Model artifacts (classifiers, embedders, indices) | Mocked (fixture output) | Real (test instance) | Real |
+| Data sources (feature stores, profile stores) | Mocked | Real (test instance) | Real |
 
 **Rule:** Integration tests MUST NOT mock the boundary under test. If both sides aren't available yet, the integration test is deferred — never written with mocks as a placeholder for real components.
 
@@ -78,6 +92,14 @@
 
 - Async fixtures that acquire resources (DB sessions, connections) must **yield and clean up**, not just return.
 - Async test support library is a project-specs binding.
+
+### Test Dataset Fixtures (Eval Tests)
+
+- Eval tests require representative test datasets with known metric baselines.
+- Test datasets are version-pinned to the artifact version — when the artifact updates, verify test data compatibility.
+- Fixture datasets must be small (CI-fast), representative (distribution matches production expectations), and deterministic (no random sampling at test time).
+- Store test datasets as fixtures alongside test files, not in external systems.
+- Factory functions for test data override only the fields relevant to the eval scenario, same as object factories.
 
 ---
 
@@ -142,3 +164,5 @@ tests/
 | Share mutable state between tests | Refuse. Transaction rollback per test. |
 | Write integration tests with mock placeholders | Refuse. Defer the test until both sides exist. |
 | Batch all tests after all code | Refuse. Layer 2 interleaves per function. |
+| Weaken eval thresholds to pass a gate | Refuse. Fix the artifact, the data, or the design. |
+| Create separate eval test infrastructure | Refuse. Eval tests live in the same test dirs, same runner, same gates. |

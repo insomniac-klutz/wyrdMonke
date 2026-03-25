@@ -15,6 +15,8 @@
 
 C4 defines outer boundaries. CoALA defines agent internals. A container is tagged `traditional` or `agentic` at L2 — this determines which framework applies at L3/L4.
 
+**Agentic Candidacy Heuristic:** When tagging a container at L2, apply this test — if the container must (a) select among tools or strategies based on runtime context, (b) handle non-deterministic inputs where the correct action isn't known at design time, or (c) make multi-step decisions with feedback loops — it is an agentic candidate. LATS (S1.4) should explore both `traditional` and `agentic` at PG-5. Default: if the container consumes any versioned-artifact or data-dependent tool, it is agentic until proven otherwise — tool selection, error recovery, and quality monitoring are agent-loop problems.
+
 For hybrid containers (traditional service with embedded agent): C4 for the service boundary, CoALA for the agent component inside.
 
 ### Decision Protocols (apply to ALL system types)
@@ -52,6 +54,20 @@ Every agentic component's HLD section and LLD MUST address all three dimensions:
 
 **Action Space** — Internal (reasoning, retrieval, learning/memory-writes) vs External (tool calls, API requests, user interaction). Define action boundaries (what the agent CANNOT do).
 
+All external capabilities are tools in the action space — a REST API, a database query, an ML model inference, an LLM call, a vector search, an NLP pipeline, an MCP server, a file system operation. Domain is irrelevant to classification. An LLM call is a versioned-artifact tool (output depends on model version). A feature store query is a data-dependent tool (output drifts with data). A REST API is a static-contract tool (schema fixed between deployments). A CV inference endpoint is a versioned-artifact tool. A prompt template is procedural memory until it's versioned, then it's a versioned-artifact tool. An embedding search is versioned-artifact (index version) AND data-dependent (corpus drift). Classify by contract behavior, not by what marketing calls it.
+
+External tools are further classified by **contract behavior** (3 subtypes — no more):
+
+| Subtype | Behavior | Examples | Requires in CoALA | Test Obligation |
+|---------|----------|----------|-------------------|-----------------|
+| **Static-contract** | Deterministic contract; schema and behavior fixed between deployments | REST APIs, databases, filesystems, message queues, MCP servers (fixed-schema tools) | (default — no extra fields) | Standard unit + integration |
+| **Versioned-artifact** | Contract shape stable, output quality depends on artifact version | LLM model versions (`claude-sonnet-4-6`, `gpt-4o-2024-08-06`), embedding models, trained classifiers, NLP pipeline artifacts (NER, sentiment, intent), CV model weights, compiled rulesets, vector indices | Version pin, retraining/rebuild trigger, eval threshold | Unit + integration + **eval** |
+| **Data-dependent** | Contract shape stable, output semantics drift with input distribution | Feature stores, search indices, user profile stores, document corpora, recommendation engines, analytics caches, any data source whose distribution drifts | Baseline profile, drift detection threshold | Unit + integration + **eval** |
+
+Static-contract is the default. Only tag tools that need the extra obligations. The taxonomy distinguishes contract behavior, not ML domain or training methodology.
+
+Tool access protocols (HTTP, gRPC, MCP, function call, CLI) are orthogonal to the taxonomy. An MCP server exposing a deterministic tool is static-contract. An MCP server exposing a model-backed tool is versioned-artifact. Protocol is an implementation detail decided at LLD; taxonomy is a design decision made at HLD.
+
 **Decision Procedure** — The control loop: observe → retrieve → reason → plan → execute → learn → loop/terminate. Not every agent needs every step. Specify which steps, stopping condition, max iterations, human-in-the-loop points.
 
 CoALA output format in HLD (for each agentic component at L3):
@@ -60,9 +76,13 @@ CoALA output format in HLD (for each agentic component at L3):
     Pattern: <Anthropic pattern from S1.3>
     Loop: observe → retrieve → reason → execute → loop
     Memory: working(<budget>), episodic(<store>), semantic(<store>), procedural(<location>)
-    Actions: internal(<strategies>), external(<tools>), boundaries(<cannot do>)
+    Actions: internal(<strategies>), external(<tools: subtype>), boundaries(<cannot do>)
     Stops when: <condition>
     Human-in-loop: <where>
+    # If any tool is versioned-artifact or data-dependent, additionally:
+    Version pins: <artifact: version> (versioned-artifact tools)
+    Eval thresholds: <metric: threshold> (versioned-artifact or data-dependent tools)
+    Drift thresholds: <metric: threshold> (data-dependent tools)
 
 ### 1.3 Anthropic Composable Patterns (Complexity Ladder)
 
@@ -313,8 +333,10 @@ Team working files (draft docs, message logs) can be cleaned up after artifacts 
 
 **S7 Boundary Matrix:**
 
-| Upstream | Contract | Downstream | Error Type | Serialization | Status |
-|----------|----------|------------|------------|---------------|--------|
+| Upstream | Contract | Downstream | Error Type | Serialization | Stability | Status |
+|----------|----------|------------|------------|---------------|-----------|--------|
+
+Stability values: `static` (default — omit for standard contracts) | `versioned(<artifact>, <pin>)` | `data-dependent(<baseline>)`. Stability determines test obligations (eval tier) and contract maintenance expectations per S1.2 tool taxonomy.
 
 **S8 Phase Plan & Test Gate Summary:** Phases, components per phase, test gate status. See S11.
 
@@ -490,6 +512,10 @@ Rules: Every OQ tags what it blocks (LLD, implementation, or test). Blocking OQs
 | Skip tests, add them later | Refuse. Tests designed with component per S11. |
 | Move to next phase, tests failing | Refuse. Fix or redesign. Cite S11.3. |
 | Only unit tests, skip integration | Refuse. Both mandatory per S11.1. |
+| Create separate ML/inference/data containers when the model is a tool of an agent | Refuse. The model is a versioned-artifact tool in the agent's action space. Cite S1.2. |
+| Organize containers or directories by ML domain (NLP, CV, DL, tabular) | Refuse. Tool taxonomy is by contract behavior (S1.2), not technology domain. |
+| Treat LLM calls as special (separate orchestration, separate error handling) | Refuse. An LLM call is a versioned-artifact tool. Same action space, same eval tier, same contract. |
+| Build a standalone feature engineering or data preprocessing pipeline | Refuse. Pre/post-processing is the pure-function layer around a tool call (implementation-specs Layer 2). Not a separate system. |
 
 ### 9.4 Pause Gates (Mandatory User Confirmation Points)
 
@@ -551,6 +577,12 @@ Claude MUST stop generating and wait for explicit user confirmation at every pau
 | Test gate | Pass/fail checkpoint. Unit+integration per LLD, system per phase. |
 | Phase checkpoint | All LLD gates + system tests green. Recorded in monke-docs/checkpoints/. |
 | LLM sidecar | HTTP wrapper for LLM interface. Used by containers not natively supporting the locked LLM library. |
+| Static-contract tool | External tool with deterministic, deployment-fixed contract. Default subtype. |
+| Versioned-artifact tool | External tool whose output depends on a versioned artifact (model, index). Requires eval tier. |
+| Data-dependent tool | External tool whose output semantics drift with input distribution. Requires eval tier. |
+| Eval test | Metric-threshold assertion for components with versioned-artifact or data-dependent tools. Runs within IL-2/IL-3. |
+| Stability (boundary) | Boundary matrix column indicating contract behavior: static, versioned, or data-dependent. |
+| MCP | Model Context Protocol. A tool access protocol. Classified by the underlying tool's contract behavior (S1.2), not by the protocol itself. |
 
 ---
 
@@ -564,7 +596,8 @@ Tests are designed during LLD creation and implemented alongside the component. 
 |------|-------|-------------|----------|---------------|
 | **Unit** | Single function/class in isolation | LLD creation | After each function implemented | Completing LLD component |
 | **Integration** | Boundary contract between components | LLD creation | After component + neighbors available | Phase checkpoint |
-| **System** | End-to-end HLD data flow (S4) | Phase planning (before phase starts) | After all phase components pass unit + integration | Phase completion |
+| **Eval** | Metric threshold for versioned-artifact or data-dependent components | LLD creation | With unit (IL-2, mocked artifact) and integration (IL-3, real artifact) | IL-2 / IL-3 (no separate gate) |
+| **System** | End-to-end HLD data flow (S4) | Phase planning (before phase starts) | After all phase components pass unit + integration + eval | Phase completion |
 
 #### Unit Tests
 
@@ -573,6 +606,17 @@ Every public function: 1 happy + 1 edge + 1 error minimum. State machines: every
 #### Integration Tests
 
 Every boundary in HLD matrix: upstream consumption, downstream production, error propagation. Cross-language: serialization round-trip. Agentic: memory write→read, tool call contract, agent-to-agent messages. Isolation: both sides REAL, everything else mocked. Database: real test instance per project-specs S10.1.
+
+#### Eval Tests
+
+Applies only to components whose tools include versioned-artifact or data-dependent subtypes (S1.2).
+
+- Assertions are **metric thresholds** (accuracy ≥ X, latency p99 ≤ Y, drift score ≤ Z), not exact-match.
+- **Unit-level eval (runs at IL-2):** mocked artifact, fixture dataset. Verifies pre/post-processing logic produces expected metrics. Tests the function's correctness, not the artifact's quality.
+- **Integration-level eval (runs at IL-3):** real artifact, test dataset. Verifies the actual artifact meets the metric threshold defined in the LLD.
+- Eval metrics are defined in the LLD test plan alongside unit and integration tests — not in a separate document.
+- A failing eval metric blocks the gate exactly like a failing test. No weakening thresholds to pass.
+- Components with only static-contract tools have no eval obligations.
 
 #### System Tests
 
