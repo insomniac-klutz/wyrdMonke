@@ -18,6 +18,8 @@ SCOPE="${ARGUMENTS:-}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - Inside a git repository
 - At least one source file or doc file exists in scope
 

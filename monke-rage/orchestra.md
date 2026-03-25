@@ -20,6 +20,8 @@ SCOPE="${ARGUMENTS:-}"
 
 ## Prerequisites
 
+**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+
 - Inside a git repository
 - At least one source file or doc file exists in scope
 
@@ -54,7 +56,7 @@ Once user picks a mode:
 
 2. **"all"** — Run all 6 modes sequentially on the same scope. Present each report as it completes. Save each rage-run log individually.
 
-For `drift`: check prerequisites first. If `hld.md` / `lld/*.md` / `monke-status.md` don't exist, skip drift and note: "Drift skipped — no spec baseline. Run `/monke-recon:reconstruct` or `/monke-design:hld` first."
+For `drift`: check prerequisites first. If `hld.md` / `lld/*.md` / `monke-status.md` don't exist, **skip drift only** (continue with remaining modes) and note: "Drift skipped — no spec baseline. Run `/monke-recon:reconstruct` or `/monke-design:hld` first."
 
 ---
 
