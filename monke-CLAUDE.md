@@ -80,6 +80,15 @@ Cross-cutting rules:
 - Use `run_in_background: true` for long-running work.
 - Main context is for coordination, synthesis, and user communication only.
 - **Create custom agent orchestration and prompts freely** — invent workflows and pipelines as the task demands.
+- **Skills reference agent teams.** When a skill says "use agent teams," "spawn parallel scanners," or "if >N files/components, parallelize" — it means: use the Claude Code Agent tool. For code-writing agents, use `isolation: "worktree"`. For read-only scans, agents can share the workspace. The skill provides the orchestration logic; the Agent tool provides the mechanism.
+
+### Agent Teams Fail Gate
+
+**Every skill MUST verify agent teams are enabled before proceeding.** On entry, read `CLAUDE.md` and confirm the Agent Teams section exists with the parallel subagent directive. If missing or absent:
+
+- **Stop immediately.** Do not proceed with the skill.
+- Tell the user: "Agent teams are not configured. WyrdMonke skills require agent teams to operate. Run `/monke-sync` to pull the latest template, or copy the Agent Teams section from `monke-CLAUDE.md` into your project's `CLAUDE.md`."
+- This is a **hard gate** — no skill runs without it.
 
 ## Commit Format
 

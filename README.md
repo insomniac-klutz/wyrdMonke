@@ -45,6 +45,7 @@ wyrdMonke/
 ├── monke-fut.md                 # walls monke hasn't climbed yet
 ├── monke-phil.md                # the manifesto — roles died, disciplines didn't, monke thrives
 ├── monke-log.md                 # every banana has a story — the changelog
+├── monke-drafter.md             # the skeleton law — how to write a skill that doesn't embarrass monke
 │
 ├── monke-design/                # monke thinks before monke builds
 │   ├── orchestra.md             # the thinking monke's autopilot — reads status, picks the next move

@@ -4,6 +4,33 @@
 
 ---
 
+## 0.7 — 2026-03-25 — monke locks the gates
+
+**Theme:** Every skill gets a bouncer. The drafter drops the skeleton law. Implement tightens its grip on boundary drift. Recon learns to count.
+
+### Added
+- **`monke-drafter.md`** — the skeleton law: mandatory structure for every skill file, voice rules, gate patterns, SRP boundaries
+- **`CLAUDE.md`** — Agent Teams Fail Gate (hard stop if agent teams missing) + Skill Structural Standard (drafter is the law)
+
+### Changed
+- **`monke-CLAUDE.md`** — mirrored Agent Teams Fail Gate + rule 8 (skills reference agent teams) into template
+- **`README.md`** — Sacred Tree: +monke-drafter.md entry
+- **`monke-mermaid.mmd`** — +DRAFTER node in root subgraph
+- **All 42 skill files** — Agent Teams Fail Gate added to Prerequisites (hard stop if CLAUDE.md missing agent teams section)
+- **`monke-flash/spark.md`** — arguments expanded: orchestra napkin-bypass documented
+- **`monke-flash/pulse.md`**, **`scope.md`**, **`spark.md`** — new Anti-Patterns to Refuse tables
+- **`monke-implement/checkpoint.md`** — trace failure procedure (stack→boundary→HLD S7→integration test), rejection recovery protocol, +anti-patterns table
+- **`monke-implement/implement.md`** — layer resume re-validates prior IL gates, LLD escalation hard pause, deferred test bookkeeping, boundary drift → hard gate with HLD amend required
+- **`monke-implement/fill.md`** — +anti-patterns table (no TBD placeholders, no force-adding .claude/)
+- **`monke-status/status.md`** — explicit source-file glob patterns for detection, phase ordering references HLD S8
+- **`monke-rage/orchestra.md`** — drift-skip logic now explicit: skip drift only, continue remaining modes
+- **`monke-docs/rage-run/template.md`** — fixed <<<mode>>> → <<<scope>>> placeholder bug
+- **`monke-recon/orchestra.md`** — partial-LLD handling: cross-ref HLD S3, reconstruct only missing
+- **`monke-recon/reconstruct.md`** — container-based agent grouping (one agent per HLD S2 container)
+- **`monke-recon/roadmap.md`** — effort-size table gains time ranges (~1-3h, ~4-8h, ~2-4d, ~5-10d)
+
+---
+
 ## 0.6 — 2026-03-25 — monke keeps receipts
 
 **Theme:** The commit skill learns to journal. Seer gains an intelligence assessor. Rage fixes its filing cabinet.
