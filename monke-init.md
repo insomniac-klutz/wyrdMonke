@@ -59,31 +59,48 @@ SKILL_DIRS=$(find "$TMPDIR" -maxdepth 1 -type d -name 'monke-*' \
   -exec sh -c 'ls "$1"/*.md >/dev/null 2>&1 && basename "$1"' _ {} \;)
 ```
 
-Install discovered skills project-local at `.claude/commands/`:
+Auto-discover root-level skill files (only files with `> **Usage:**` — excludes reference docs like drafter, phil, log, fut):
+
+```bash
+# Root-level monke-*.md that are actual slash commands, not reference docs
+# Exclude monke-CLAUDE.md (handled in Phase 4)
+ROOT_CMDS=$(find "$TMPDIR" -maxdepth 1 -name 'monke-*.md' ! -name 'monke-CLAUDE.md' \
+  -exec sh -c 'grep -q "^> \*\*Usage:\*\*" "$1" && basename "$1"' _ {} \;)
+```
+
+Install discovered skills and root commands project-local at `.claude/commands/`:
 
 ```bash
 mkdir -p .claude/commands
 for DIR in $SKILL_DIRS; do
   cp -r "$TMPDIR/$DIR/" .claude/commands/$DIR/
 done
+
+# Root commands
+for FILE in $ROOT_CMDS; do
+  cp "$TMPDIR/$FILE" .claude/commands/$FILE
+done
 ```
 
-**⏸ Decision gate** — show skill install plan (list discovered directories and note if existing skills will be overwritten):
+**⏸ Decision gate** — show install plan (list discovered skill directories and root commands, note if existing files will be overwritten):
 
 Confirm / Adjust / Reject?
 
-- **Confirm** → install all discovered skills to `.claude/commands/`
-- **Adjust** → change which skill directories to install
-- **Reject** → skip skill install, proceed to Phase 3
+- **Confirm** → install all discovered skills and root commands to `.claude/commands/`
+- **Adjust** → change which items to install
+- **Reject** → skip install, proceed to Phase 3
 
-After copying, verify skills landed:
+After copying, verify everything landed:
 ```bash
 for DIR in $SKILL_DIRS; do
   ls .claude/commands/$DIR/*.md
 done
+for FILE in $ROOT_CMDS; do
+  ls .claude/commands/$FILE
+done
 ```
 
-Report discovered directory count and total file count.
+Report: skill directory count, root command count, and total file count.
 
 ---
 
@@ -91,9 +108,13 @@ Report discovered directory count and total file count.
 
 Copy project template files into the current working directory:
 
-1. `$TMPDIR/monke-docs/` → `./monke-docs/`
+1. `$TMPDIR/monke-docs/` → `./monke-docs/` (includes `monke-readsme.md` — the repo origin reference)
 2. `$TMPDIR/monke-mermaid.mmd` → `./monke-mermaid.mmd`
 3. `$TMPDIR/monke-docs/status-template.md` → `./monke-status.md` (rename on copy)
+4. `$TMPDIR/monke-claude-settings.json` → `.claude/settings.json` (merge)
+   - If `.claude/settings.json` does not exist → copy directly
+   - If it exists → deep-merge: inject all keys from upstream without clobbering existing user settings
+   - After merge, warn user: "`.claude/settings.json` updated — restart Claude Code (`/exit`) for changes to take effect."
 
 **⏸ Decision gate** — show scaffold plan (note if existing files will be overwritten):
 
@@ -156,16 +177,21 @@ rm -rf "$TMPDIR"
 
 1. Verify files landed:
    ```bash
-   ls monke-docs/ CLAUDE.md monke-mermaid.mmd monke-status.md
+   ls monke-docs/ CLAUDE.md monke-mermaid.mmd monke-status.md .claude/settings.json
    for DIR in $SKILL_DIRS; do
      ls .claude/commands/$DIR/*.md
+   done
+   for FILE in $ROOT_CMDS; do
+     ls .claude/commands/$FILE
    done
    ```
 
 2. Show summary:
    - Skills installed: list each discovered directory + file counts
+   - Root commands installed: list each root command file
    - Project files scaffolded: list what was copied
    - CLAUDE.md status: new / merged / separate
+   - Settings: new / merged (list injected keys)
    - Branch used: `$BRANCH`
 
 3. Tell the user:

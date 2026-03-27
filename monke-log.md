@@ -4,6 +4,24 @@
 
 ---
 
+## 0.8 — 2026-03-28 — monke raises the flag
+
+**Theme:** Commit skill learns to fling PRs. Init and sync get smarter about what's a skill and what's a settings file. The birth certificate lands. The Sacred Tree widens its roots.
+
+### Added
+- **`monke-claude-settings.json`** — settings template: agent teams env var, ready for `.claude/settings.json` merge
+- **`monke-docs/monke-readsme.md`** — the birth certificate: origin links, repo pitch, sacred references
+
+### Changed
+- **`monke-ops/commit.md`** — +Phase 6 Raise the Flag: PR/MR creation with platform detection, single/chain flows, hop-by-hop confirmation gates
+- **`monke-init.md`** — root command auto-discovery (filters by `> **Usage:**`), settings merge into `.claude/settings.json`, monke-readsme scaffolding
+- **`monke-sync.md`** — root command discovery filter, settings deep-merge, protected file guard assertions, monke-status.md reconciliation on template drift
+- **`CLAUDE.md`** — Sacred Tree invariant broadened: root dir changes now trigger tree sync
+- **`README.md`** — Sacred Tree: +monke-readsme.md entry
+- **`monke-mermaid.mmd`** — +READSME node, +init→readsme edge
+
+---
+
 ## 0.7 — 2026-03-25 — monke locks the gates
 
 **Theme:** Every skill gets a bouncer. The drafter drops the skeleton law. Implement tightens its grip on boundary drift. Recon learns to count.

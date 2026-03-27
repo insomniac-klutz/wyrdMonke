@@ -22,6 +22,7 @@ graph TD
         PROJECT["project-specs.md"]
         HLD["hld.md"]
         OQ["open-questions.md"]
+        READSME["monke-readsme.md"]
         STATUS_TPL["status-template.md"]
 
         subgraph lld_dir["lld/"]
@@ -162,6 +163,7 @@ graph TD
     %% Init installs skills and scaffolds project
     INIT -->|"installs"| SK_TINKER
     INIT -->|"scaffolds"| PROJECT
+    INIT -->|"scaffolds"| READSME
     INIT -->|"merges"| CLAUDE
 
     %% Sync updates skills and diffs specs

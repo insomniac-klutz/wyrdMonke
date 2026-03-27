@@ -109,6 +109,7 @@ wyrdMonke/
 │   ├── implementation-specs.md  # how monke builds (shape before behavior)
 │   ├── test-specs.md            # how monke proves it works
 │   ├── project-specs.md         # the binding scroll (<<<your stuff here>>>)
+│   ├── monke-readsme.md          # the origin myth — where these docs crawled out of
 │   ├── status-template.md       # blank dashboard, ready to fill
 │   ├── hld.md                   # the grand blueprint (empty until you dream)
 │   ├── open-questions.md        # the 3am hauntings (empty until you ask)

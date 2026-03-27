@@ -36,7 +36,7 @@
 
 **The Sacred Tree (in `README.md`), the skill directories, and `monke-mermaid.mmd` are a single source of truth that must stay in sync.**
 
-1. **Any change to a skill directory** (add, remove, rename a `.md` file) **MUST update the Sacred Tree** in `README.md`. Every line in the tree has a punchy, irreverent comment — new lines are no exception. Match the tone: short metaphor, vivid verb, personality. Bland descriptions are a crime against monke.
+1. **Any change to a skill directory or the root dir** (add, remove, rename a `.md` file) **MUST update the Sacred Tree** in `README.md`. Every line in the tree has a punchy, irreverent comment — new lines are no exception. Match the tone: short metaphor, vivid verb, personality. Bland descriptions are a crime against monke.
 2. **Any change to the Sacred Tree MUST update `monke-mermaid.mmd`** — add/remove nodes and edges to match the new structure.
 3. **The chain is non-negotiable:** skill dir change → Sacred Tree update → mermaid update. Skip a step, shame on monke.
 
