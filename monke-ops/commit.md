@@ -254,7 +254,221 @@ Files still uncommitted: <list, if any>
 If files remain uncommitted (from skipped/aborted groups or files not included in any group):
 - "Uncommitted changes remain. Run `/monke-ops:commit` again to address them."
 
-Do NOT push. If user wants to push, they do it themselves.
+---
+
+## Phase 6: Raise the Flag
+
+After reporting, ask the user if they want to raise a PR or MR.
+
+### 6.1 Platform & Intent
+
+Detect the remote hosting platform:
+
+```bash
+git remote get-url origin
+```
+
+- If URL contains `github.com` → **GitHub** (Pull Request)
+- If URL contains `gitlab.com` or a known GitLab self-hosted domain → **GitLab** (Merge Request)
+- If neither or ambiguous → ask: "Is this GitHub (PR) or GitLab (MR)?"
+
+Present:
+
+```
+⏸ Create a Pull Request / Merge Request?
+
+  Platform: GitHub (detected from remote)
+  Current branch: <branch>
+
+  Yes / No
+```
+
+If **No** → stop. Commits are done, user pushes manually if they want.
+
+**⏸ Wait for user confirmation before proceeding.**
+
+### 6.2 Branch Flow
+
+Ask the user whether this is a single PR or a multi-hop chain.
+
+Detect the default branch from `git remote show origin` or fallback to `main`/`master`/`trunk` in that order.
+
+```
+⏸ PR/MR flow:
+
+  Current branch: <branch>
+
+  1) Single — <branch> → <default branch>
+  2) Chain  — define a multi-hop flow (e.g. feature → develop → main)
+
+  Pick [1/2]:
+```
+
+**⏸ Wait for user to pick.**
+
+#### Single flow
+
+Ask which remote branch to target:
+
+```
+⏸ Target branch for PR/MR?
+
+  Enter target branch name [default: <default branch>]:
+```
+
+**⏸ Wait for user to confirm target branch.**
+
+Result: a single hop — `[source → target]`.
+
+#### Chain flow
+
+Ask the user to define the full branch chain, starting from the current branch:
+
+```
+⏸ Define the branch chain (current branch is the start):
+
+  Example: feature/auth → develop → main
+
+  <branch> → _____ → _____ → ...
+
+  Enter chain (arrow-separated):
+```
+
+Validate:
+- First branch in the chain must be the current branch. If it isn't → warn and re-ask.
+- Minimum 3 branches (2 hops). If only 2 → that's a single flow, confirm switch.
+- Each branch name must be a valid git ref. If not → reject and re-ask.
+
+Present the parsed chain:
+
+```
+⏸ PR/MR chain:
+
+  Hop 1: feature/auth → develop
+  Hop 2: develop → main
+
+  <N> PRs/MRs will be created, one at a time.
+  You review/merge each before the next is raised.
+
+  Confirm / Adjust / Abort
+```
+
+**⏸ Wait for user to confirm the chain.**
+
+Result: an ordered list of hops — `[A → B, B → C, ...]`.
+
+### 6.3 Execute Hops
+
+Process each hop in order. For every hop (single flow = one hop, chain flow = N hops):
+
+#### 6.3.1 Draft PR/MR Message
+
+Synthesize a PR/MR title and body from the committed groups:
+
+**Title:** short, under 70 characters — derive from the commit messages. If single commit, use its message. If multiple, synthesize a theme. For chain hops beyond the first, prefix with the hop context: `[develop → main]`.
+
+**Body:** structured summary:
+
+```markdown
+## Summary
+- <bullet per commit group — what changed and why>
+
+## Changes
+- `<hash>` <commit message>
+- `<hash>` <commit message>
+- ...
+```
+
+For chain hops, append a chain context section:
+
+```markdown
+## Chain
+- Hop <N>/<total>: `<source>` → `<target>`
+- Previous: <link to prior PR/MR, if any>
+```
+
+Present the draft:
+
+```
+⏸ PR/MR <N>/<total>:
+
+  Title: "<title>"
+  Target: <target> ← <source>
+
+  Body:
+  <draft body>
+
+  Confirm / Adjust title / Adjust body / Abort
+```
+
+- **Confirm** → proceed to push and create
+- **Adjust title** → user provides new title, re-present
+- **Adjust body** → user provides edits, re-present
+- **Abort** → stop. Already-created PRs/MRs are preserved. Remaining hops are skipped.
+
+**⏸ Wait for user to confirm the PR/MR draft.**
+
+#### 6.3.2 Push & Create
+
+Push the source branch to the remote:
+
+```bash
+git push -u origin <source-branch>
+```
+
+Then create the PR/MR:
+
+**GitHub:**
+```bash
+gh pr create --head <source-branch> --base <target-branch> --title "<title>" --body "<body>"
+```
+
+**GitLab:**
+```bash
+glab mr create --source-branch <source-branch> --target-branch <target-branch> --title "<title>" --description "<body>"
+```
+
+If the CLI tool (`gh` or `glab`) is not installed → tell the user: "Install `gh` (GitHub CLI) / `glab` (GitLab CLI) to create PR/MRs from the terminal." Stop.
+
+If push or creation fails → report the error, suggest manual steps. Do not retry automatically.
+
+On success, report the PR/MR URL:
+
+```
+PR/MR created: <url>
+```
+
+#### 6.3.3 Chain Gate (chain flow only)
+
+If there are remaining hops, pause:
+
+```
+⏸ Hop <N>/<total> complete: <url>
+
+  Next hop: <next source> → <next target>
+  Review and merge the PR/MR above before continuing.
+
+  Continue to next hop / Abort remaining
+```
+
+- **Continue** → proceed to draft the next hop's PR/MR (back to 6.3.1)
+- **Abort remaining** → stop. Already-created PRs/MRs are preserved.
+
+**⏸ Wait for user to confirm before proceeding to the next hop.**
+
+### 6.4 Chain Summary (chain flow only)
+
+After all hops are processed, present the full chain result:
+
+```
+Chain Summary:
+
+  Hop 1: feature/auth → develop — <url1>
+  Hop 2: develop → main         — <url2>
+  --aborted-- staging → prod    (skipped by user)
+
+  Created: <N>/<total> PRs/MRs
+```
 
 ---
 
