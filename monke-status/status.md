@@ -102,6 +102,11 @@ Determine the single next actionable step using this waterfall:
          "Run /monke-design:lld <component> to design <component>."
    No  ↓
 
+5b. Any LLDs with status "reconstructed" but no test plan (PG-10)?
+    Yes → Pick first by phase order.
+          "Run /monke-design:lld <component> (review mode) to add the test plan."
+    No  ↓
+
 6. Any LLD-complete components not yet implemented (no source files)?
    Yes → Pick first by phase order (HLD S8 Phase Plan, dependency sequence).
          "Run /monke-implement:implement <component> to start building."
@@ -196,6 +201,18 @@ Blockers: <count and summary, or "none">
 ## Status Update Protocol
 
 **Every skill in the WyrdMonke package follows this protocol:**
+
+### Updated Line Format
+
+The canonical format is:
+```
+Updated: YYYY-MM-DD by /<skill-dir>:<skill-name>
+```
+Example: `Updated: 2026-04-01 by /monke-design:hld`
+
+If an orchestrator delegates to a skill, the **executing skill** bumps the line (not the orchestrator). Only one `Updated:` line — replace, don't append.
+
+### Entry/Exit Rules
 
 1. **On entry:** Read `monke-status.md`. Verify prerequisites for this skill are met. If not, tell the user what to do first (use the `next` waterfall logic).
 

@@ -24,7 +24,7 @@ COMPONENT="${ARGUMENTS:?Component name required}"
 
 Read `monke-status.md`. Then verify:
 
-- `monke-docs/lld/${COMPONENT}.md` exists with confirmed design (PG-9 passed — check LLDs table: Design column is `done` or has checkmark)
+- `monke-docs/lld/${COMPONENT}.md` exists with confirmed design (PG-9 passed — check LLDs table: Design column is `done` or has checkmark, OR status is `"reconstructed"` for recon-origin LLDs)
 - `monke-docs/hld.md` exists with boundary matrix (S7)
 - No blocking OQs for this component (check `monke-docs/open-questions.md` for `Blocks: testing of <component>` or `Blocks: LLD for <component>`)
 

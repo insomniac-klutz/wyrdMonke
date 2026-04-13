@@ -39,9 +39,9 @@ Read `monke-status.md`, then walk top-to-bottom. **First match wins.**
 ```
 Read monke-status.md
 │
-├─ Any LLD with design confirmed (PG-9) but no test plan (PG-10)?
+├─ Any LLD with design confirmed (PG-9) or status "reconstructed" — but no test plan (PG-10)?
 │  └─ Recommend: test-plan <component>
-│     "Design is locked. Time to plan what we're testing before anyone writes a line."
+│     "Design is locked (or reconstructed). Time to plan what we're testing before anyone writes a line."
 │
 ├─ Any component with test plan but tests not written?
 │  └─ "Tests are written during /monke-implement:implement Layer 2-3.
@@ -96,6 +96,7 @@ Read monke-status.md
 - **Coverage is a floor, not a trophy.** Below threshold = blocked. Above threshold = sufficient. Don't chase 100% — that's vanity metrics for monkes who've lost the plot.
 - **Failure categorization.** When tests fail, use `test-run`'s analysis: implementation bug, design bug, test bug, or environment issue. Don't just say "it's red."
 - **Deferred test tracking.** Knows which integration tests were deferred and why. Re-checks every loop. When the neighbor finally shows up, surfaces it immediately.
+- **Recon-origin awareness.** Reconstructed LLDs (status `"reconstructed"`) count as design-confirmed for PG-10 test plan purposes. They need test plans before implementation can proceed. Route through `/monke-test:test-plan` or `/monke-design:lld` review mode.
 - **Cross-skill awareness.** Tests are WRITTEN during `/monke-implement:implement` Layer 2-3. Tests are VERIFIED and MEASURED by test skills. Orchestra doesn't write tests — it checks if they exist, pass, and cover.
 - **PG-13 escalation.** Persistent failures (>2 cycles) get surfaced to the user, not retried endlessly. Insanity is doing the same `test-run` expecting different results.
 
