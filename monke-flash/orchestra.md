@@ -154,4 +154,4 @@ If orchestra dies mid-session (context window, crash, cosmic ray), write `monke-
 | Skip pulse because "it compiled" | "It compiled" is not "it works." Run it. Show it. Get feedback. |
 | Run blitz before confirming the sketch | The architecture gate prevents building on sand. |
 | Copy full skill content into this session | Reference the skill logic, don't duplicate it. Follow `spark.md` logic. |
-| Panic when context window gets tight | Write status, tell the user where you stopped, die gracefully. |
+| Panic when context window gets tight | **Context Death Protocol:** (1) Write `monke-status.md` Flash section with last completed phase and in-progress checkpoint (e.g., "blitz: 2/4 flows — last working: auth-flow"). (2) Set "Where We Are" to "Flash <phase> in progress — resume with `/monke-flash:orchestra`". (3) Tell user: "Context exhausted. Status saved. Re-run `/monke-flash:orchestra` to resume." Recovery detection will find the checkpoint and skip completed phases. |

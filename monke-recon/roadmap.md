@@ -273,6 +273,21 @@ Update `recon-roadmap.md` with adjustments before finalizing.
 
 ---
 
+## HLD S8 Sync
+
+After roadmap confirmation, update `monke-docs/hld.md` S8 Phase Plan to reflect R1-R5. HLD S8 is the canonical phase source — all downstream skills (`implement`, `checkpoint`, `test`) read it.
+
+1. Read current `monke-docs/hld.md` S8.
+2. Replace the phase plan with R1-R5 from the confirmed roadmap:
+   - Map each R-phase to its component list from the component priority table
+   - Preserve dependency ordering
+   - Add note: `Phase plan updated by /monke-recon:roadmap — <date>. Phases R1-R5 replace original reconstruction phases.`
+3. Write updated `monke-docs/hld.md`.
+
+**Only S8 changes.** Do not touch other HLD sections — they were confirmed during reconstruction.
+
+---
+
 ## Next Steps
 
 After the roadmap is confirmed, suggest the first concrete actions:
@@ -281,7 +296,15 @@ After the roadmap is confirmed, suggest the first concrete actions:
 2. **"Once blockers clear, begin Phase R2: `/monke-implement:implement <first-component> 0`"** — first foundation component
 3. **"Run `/monke-status:status` to see the full dashboard with recon phases."** — the dashboard now shows the complete picture
 
-**The roadmap connects recon back to the existing monke pipeline.** From here, it's the standard loop:
+**The bridge from recon to implementation:**
+
+Recon LLDs are reconstructed — they have maturity tags but no test plans. Before implementation, each component needs a test plan:
+
+1. **Test plan generation** → `/monke-design:lld <component>` (review mode) or `/monke-test:test-plan <component>` — formalizes the test plan (PG-10) on the reconstructed LLD
+2. **Implementation** → `/monke-implement:implement <component>` — now recognizes recon-origin LLDs with maturity tags
+3. **Standard pipeline from there** — Layer 0→3, IL gates, checkpoints
+
+The standard loop applies once the bridge is crossed:
 - Design questions → `/monke-design:oq`
 - Implementation → `/monke-implement:implement`
 - Testing → `/monke-test:test-run`
