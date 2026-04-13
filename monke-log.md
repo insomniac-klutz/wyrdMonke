@@ -4,6 +4,27 @@
 
 ---
 
+## 0.9 — 2026-04-14 — monke bridges the gap
+
+**Theme:** Recon meets implementation. Every skill learns to read maturity tags, route recon-origin LLDs, and die gracefully when context runs out. Agent teams get the TeamCreate/teammate rewrite. The terminology table drops so everyone speaks the same monke.
+
+### Changed
+- **`CLAUDE.md`** + **`monke-CLAUDE.md`** — agent teams rewrite: TeamCreate/teammate model with tool chain, named codenames, mandatory `team_name` rule
+- **`monke-docs/sdlc-specs.md`** — +§5 recon-to-implementation bridge flow, +§8 system terminology table (7 canonical terms), section renumbering
+- **`monke-recon/reconstruct.md`** — maturity tag synthesis (flash-mode cross-ref from manifest), file map example with Maturity column
+- **`monke-recon/roadmap.md`** — +HLD S8 sync after roadmap confirmation, bridge-to-implementation next steps with test plan generation
+- **`monke-recon/orchestra.md`** — +context death protocol: write status, tell user where you stopped
+- **`monke-design/lld.md`** — recon-origin LLD review mode (preserve reconstruction, add test plan), seer artifact conflict check with user escalation
+- **`monke-design/orchestra.md`** — rage-sourced OQ routing: drift→HLD amend, haunt critical→OQ resolve, other blockers→triage
+- **`monke-implement/implement.md`** — recon-origin awareness: maturity tag layer overrides (as-is/needs-work/stub), recon-gaps cross-reference
+- **`monke-implement/orchestra.md`** — reconstructed LLD routing: test plan check before implementation, recon-origin layer behavior note
+- **`monke-rage/orchestra.md`** — +downstream routing section: auto-promote rules per mode, dedup against existing OQs, OQ template
+- **`monke-test/orchestra.md`** + **`monke-test/test-plan.md`** — recon-origin awareness: reconstructed LLDs count for PG-10
+- **`monke-status/status.md`** — +reconstructed-no-test-plan waterfall check (step 5b), updated line format spec, entry/exit rules
+- **`monke-flash/orchestra.md`** — context death protocol: status write + checkpoint + resume instruction
+
+---
+
 ## 0.8 — 2026-03-28 — monke raises the flag
 
 **Theme:** Commit skill learns to fling PRs. Init and sync get smarter about what's a skill and what's a settings file. The birth certificate lands. The Sacred Tree widens its roots.
