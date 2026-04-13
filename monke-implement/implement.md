@@ -26,7 +26,9 @@ LAYER="${2:-0}"
 
 Read `monke-status.md`. Then verify:
 
-- `monke-docs/lld/<component>.md` exists with confirmed design (PG-9 passed) and test plan (PG-10 passed)
+- `monke-docs/lld/<component>.md` exists and is implementation-ready:
+  - **Greenfield:** PG-9 (design confirmed) + PG-10 (test plan confirmed) passed
+  - **Recon-origin** (header: `Source: reverse-engineered`): reconstruction confirmed + test plan present (unit + integration tables populated). If test plan missing → "Recon mapped this component but needs a test plan before implementation. Run `/monke-design:lld <component>` in review mode or `/monke-test:test-plan <component>`."
 - No blocking OQs for this component (check `open-questions.md` for `Blocks: implementation of <component>`)
 - `project-specs.md` S8 has IL gate commands defined
 - `project-specs.md` S9 has test bindings defined
@@ -47,16 +49,25 @@ If prerequisites fail → explain what's missing and which skill to run first.
    - Unit test plan (functions, inputs, expected outputs, categories)
    - Integration test plan (boundaries, upstream/downstream, error scenarios)
    - Decomposition tree (dependency order for Layer 2)
+   - If recon-origin LLD: maturity tags (`as-is`/`needs-work`/`stub`) per function — these override default layer assumptions:
+     - `as-is`: files/types already exist. Layer 0–1 verify only (confirm types compile, imports resolve — no rewrite). Layer 2 adds tests for existing code, fixes only what tests reveal.
+     - `needs-work`: files exist but are rough. Layer 0–1 verify, Layer 2 rewrites bodies per gap findings + adds tests.
+     - `stub`: placeholder only. Full Layer 0→3 as if greenfield.
 
 2. Read `project-specs.md`:
    - S8: IL gate commands (what to run after each layer)
    - S9: test bindings (framework, runner command, directories)
    - S10: locked stack (language, tools, conventions)
 
-3. Read upstream/downstream component status:
+3. If `monke-docs/recon/` exists (recon-origin project), also read:
+   - `recon-gaps.md` — filter to this component's findings. Critical/high gaps inform Layer 2 priorities (what to fix first).
+   - `recon-roadmap.md` — current R-phase context and effort estimates for this component.
+   - Cross-reference: maturity tags in LLD + gap severity = implementation priority. A `needs-work` function with a critical gap outranks a `needs-work` function with a low gap.
+
+4. Read upstream/downstream component status:
    - Are neighboring components implemented? (affects Layer 3 integration tests)
 
-4. If resuming from a layer > 0 → verify the component's source files exist and prior gates passed.
+5. If resuming from a layer > 0 → verify the component's source files exist and prior gates passed.
 
 Present a brief context summary: component name, file count, function count, layer range to execute.
 

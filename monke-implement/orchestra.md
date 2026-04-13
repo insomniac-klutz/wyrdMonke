@@ -52,6 +52,11 @@ Read monke-status.md
 │  └─ Check LLDs table — any with status "ready" + test plan confirmed?
 │     ├─ Yes → Recommend: implement <first-phase-component> 0
 │     │  "Fresh meat. Starting Layer 0 — type skeleton."
+│     ├─ No ready, but LLDs with status "reconstructed"?
+│     │  ├─ Test plan present? → Recommend: implement <component> 0
+│     │  │  "Recon mapped this one. Test plan attached. Starting Layer 0."
+│     │  └─ Test plan missing? → Recommend: /monke-design:lld <component> (review)
+│     │     "Recon built the LLD but no test plan. Formalize before building."
 │     └─ No → "No components ready. Run /monke-design:orchestra first."
 │        Stop.
 │
@@ -90,6 +95,7 @@ Read monke-status.md
 
 - **Phase order is sacred.** Never recommend Phase N+1 before Phase N checkpoint passes. The jungle has layers for a reason.
 - **Layer order is sacred.** Never skip IL gates. 0 then 1 then 2 then 3. Shape before behavior before tests before integration. No shortcuts.
+- **Recon-origin awareness.** If LLDs have status `"reconstructed"`, they came from `/monke-recon:reconstruct`. Route through `/monke-design:lld <component>` (review mode) to formalize test plans before implementation. Recon LLDs with maturity tags (`as-is`/`needs-work`/`stub`) change how layers execute — see `implement.md` context loading.
 - **Deferred integration tracking.** When Layer 3 was deferred because a neighbor wasn't ready, orchestra remembers. Every loop re-checks neighbor status. The debt doesn't disappear.
 - **Agent teams for parallel components.** If 2+ components in the same phase have no cross-dependencies, suggest parallel execution with `isolation: "worktree"`. Don't force sequential when parallel is safe.
 - **Persistent failure escalation.** If an IL gate fails >2 times on the same component, trigger **PG-13** and escalate to user. Monke doesn't bang its head on the same tree. User decides: fix, redesign, or cut scope.
