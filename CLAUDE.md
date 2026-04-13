@@ -1,19 +1,44 @@
 # wyrdMonke — Project Instructions
 
-## Agent Teams: Default Mode of Operation
+## Agent Teams (mandatory for all work)
 
-**Always use agent teams (parallel subagents) as the default mode of operation in this repository.** This is a hard requirement, not a suggestion.
+### Tool Chain
+
+```
+TeamCreate → TaskCreate (×N) → TaskUpdate (deps) → Agent w/ team_name (×N) → SendMessage → TaskUpdate (complete) → TeamDelete
+```
+
+### Tools
+
+- `TeamCreate({ team_name, description })` — create team
+- `TaskCreate({ subject, description, activeForm })` — add task to shared list
+- `TaskUpdate({ taskId, owner, status, addBlockedBy })` — claim/complete/block tasks
+- `TaskList` — check task statuses
+- `Agent({ name, team_name, subagent_type: "general-purpose", prompt, run_in_background: true })` — **spawn teammate**
+- `SendMessage({ type, recipient, content })` — teammate messaging / shutdown
+- `TeamDelete` — cleanup after shutdown
+
+### The One Rule That Matters
+
+`Agent` WITHOUT `team_name` = subagent (isolated, no coordination). **NEVER use this.**
+`Agent` WITH `team_name` + `name` = teammate (shared task list + mailbox). **ALWAYS use this.**
+
+### Steps
+
+1. **Explore**: `TeamCreate` → spawn 2–3 scout teammates → gather findings via `SendMessage`.
+2. **Clarify**: ask user targeted questions based on findings.
+3. **Plan**: enter plan mode. List each teammate (two-word cool and quircky codename , first word cool phrase , second word describing the task/responsibility ex phantom-parser, neon-extractor, vortex-mapper, cipher-scorer, blitz-linker), role, file ownership, dependency edges. Present for approval.
+4. **Execute**: `TeamCreate` → `TaskCreate` (×N) → wire `addBlockedBy` → spawn teammates → lead delegates only, does NOT write code → wait for all `TaskUpdate(completed)`.
+5. **Teardown**: `SendMessage(shutdown_request)` to each → `TeamDelete`.
 
 ### Rules
 
-1. **Decompose every non-trivial task into independent subtasks and dispatch them as parallel agents.** Do not work sequentially when parallel execution is possible.
-2. **Use the Agent tool liberally.** Prefer spawning specialized subagents (Explore, Plan, data-analyst-expert, general-purpose, etc.) over doing everything in the main conversation context.
-3. **Run independent agents in parallel within a single message.** If two or more subtasks have no dependency on each other, launch them simultaneously — never sequentially.
-4. **Use background agents (`run_in_background: true`) for long-running work** so the main conversation remains responsive.
-5. **Prefer agent isolation (`isolation: "worktree"`) for any agent that writes code**, to avoid conflicts between parallel agents editing the same files.
-6. **Reserve the main context for coordination, synthesis, and user communication.** Heavy research, exploration, code generation, and testing should be delegated to agents.
-7. **You are free to create your own agent orchestration and prompts.** Design custom agent workflows, compose novel multi-agent pipelines, and craft specialized prompts tailored to the task at hand. You are not limited to predefined patterns — invent new orchestration strategies when the situation calls for it. Think of yourself as an agent architect, not just an agent dispatcher.
-8. **Skills reference agent teams.** When a skill says "use agent teams," "spawn parallel scanners," or "if >N files/components, parallelize" — it means: use the Claude Code Agent tool. For code-writing agents, use `isolation: "worktree"`. For read-only scans, agents can share the workspace. The skill provides the orchestration logic; the Agent tool provides the mechanism.
+- ALL work goes through agent teams. Single-file / <20-line exceptions require explicit user permission.
+- Each teammate owns distinct files — no shared-file edits.
+- 3–5 teammates, 5–6 tasks each.
+- Embed full context into spawn prompts — teammates have no conversation history.
+- Lead coordinates only. If lead starts writing code, STOP and delegate.
+- Use `planModeRequired: true` for risky teammates.
 
 ### Agent Teams Fail Gate
 
@@ -22,13 +47,6 @@
 - **Stop immediately.** Do not proceed with the skill.
 - Tell the user: "Agent teams are not configured. WyrdMonke skills require agent teams to operate. Run `/monke-sync` to pull the latest template, or copy the Agent Teams section from `monke-CLAUDE.md` into your project's `CLAUDE.md`."
 - This is a **hard gate** — no skill runs without it.
-
-### Anti-Patterns (Do NOT Do These)
-
-- Working through a large task entirely in the main context when it could be parallelized.
-- Running agents sequentially when they have no dependencies on each other.
-- Doing research and implementation in the same agent when they could be split.
-- Spawning a single agent for work that could be split across multiple parallel agents.
 
 ---
 

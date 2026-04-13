@@ -163,3 +163,4 @@ Set "Next action": Point to `/monke-implement:implement` for R1-R5 execution. Th
 - **Merging gaps and OQs.** They're different things. Gaps = known missing pieces, known fixes. OQs = implicit decisions that need conscious confirmation. Don't blend them.
 - **Skipping recovery detection.** If artifacts exist, respect them. Don't redo work. Don't overwrite confirmed findings.
 - **Rushing to roadmap.** Each phase feeds the next. A roadmap without gaps is a wishlist. Gaps without a survey is guessing. The order matters.
+- **Dying without saving state.** If context window exhausts mid-chain: (1) Write `monke-status.md` Recon section with last completed phase (e.g., `[x] Survey`, `[~] Reconstruct (LLDs) — 2/5 done`). (2) Set "Where We Are" to phase in progress. (3) Tell user to re-run `/monke-recon:orchestra` — recovery detection picks up from artifacts on disk.

@@ -52,9 +52,16 @@ monke-status.md
 |   --> Recommend: hld (resume from next incomplete level)
 |       "HLD in progress. Next up: <level>."
 |
-+-- Blocking OQs exist? (open-questions.md has P0 blockers)
-|   --> Recommend: oq triage
-|       "Blockers on the vine. Resolve them before swinging further."
++-- Blocking OQs exist? (open-questions.md has Blocks: fields)
+|   +-- Any with Source: rage:drift affecting HLD?
+|   |   --> Recommend: hld amend "<drift summary>"
+|   |       "Spec-code divergence from rage scan. HLD needs amendment first."
+|   +-- Any with Source: rage:haunt, Severity: critical?
+|   |   --> Recommend: oq resolve OQ-<id>
+|   |       "Critical security finding from rage. Resolve before design proceeds."
+|   +-- Other blockers?
+|       --> Recommend: oq triage
+|           "Blockers on the vine. Resolve them before swinging further."
 |
 +-- Components need LLDs? (status: "waiting" in LLDs table)
 |   +-- Multiple ready? (same phase, no cross-deps)

@@ -105,7 +105,7 @@ Version: 1.0 | Date: <today> | Source: reverse-engineered from existing codebase
 
 **S8 Phase Plan:**
 - Group components by dependency order.
-- For reconstruction, phases map to the recon roadmap phases (R1-R5) rather than greenfield phases.
+- Write preliminary phases based on dependency analysis. These are placeholders — `/monke-recon:roadmap` will refine them into R1-R5 and sync back to S8 after gap analysis and OQ resolution.
 - Note test gate status per component from survey test inventory.
 
 ### 1.3 Quality Gate
@@ -137,6 +137,20 @@ For each component (or the specified one): write `monke-docs/lld/<component>.md`
 1. Read `monke-docs/hld.md` — for boundary contracts and component placement
 2. Read `monke-docs/recon/recon-survey.md` — for raw code inventory
 3. Read the actual source files for this component — the code IS the design
+4. If flash mode: read `monke-docs/flash/flash-manifest.md` — shortcuts and deferred work map directly to maturity tags
+
+### 2.1b Maturity Tag Synthesis (Flash Mode)
+
+If `flash-manifest.md` exists, cross-reference manifest entries against this component's functions:
+
+| Manifest Entry | → Maturity Tag |
+|---|---|
+| Function works, no shortcuts noted | `as-is` |
+| Shortcut noted (hardcoded values, missing validation, no error handling) | `needs-work` |
+| Listed in "What Was Cut" or "Known Shortcuts" as placeholder/fake | `stub` |
+| Listed in "Known Bugs" affecting this function | `needs-work` (minimum) |
+
+For archaeology mode (no manifest): derive tags from code analysis — has tests + error handling = `as-is`, functional but rough = `needs-work`, placeholder/todo = `stub`.
 
 ### 2.2 Write LLD
 
@@ -171,6 +185,16 @@ Mark each function/module with a maturity tag:
 
 | File | Layer | Exports | Depends On | Maturity |
 |------|-------|---------|------------|----------|
+
+Example:
+```
+| src/auth/handler.ts   | 2 | handleLogin(), handleLogout() | types, db    | as-is      |
+| src/auth/validate.ts  | 2 | validateToken(), parseJWT()   | types        | needs-work |
+| src/auth/types.ts     | 0 | AuthUser, AuthError           | —            | as-is      |
+| src/auth/middleware.ts | 1 | authGuard()                   | validate, db | stub       |
+```
+
+Downstream consumers (`/monke-implement:implement`, `/monke-design:lld` review mode) parse this table to determine layer behavior overrides per function. The Maturity column is the canonical source — keep it honest.
 
 **Test Coverage:**
 - What tests exist for this component (from survey)?

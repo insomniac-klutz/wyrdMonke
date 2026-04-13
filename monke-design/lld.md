@@ -25,7 +25,9 @@ Read `monke-status.md`. Then verify:
 
 - `monke-docs/hld.md` has confirmed L3 (S3 component map exists with this component)
 - No blocking OQs for this component (check `open-questions.md` for `Blocks: LLD for <component>`)
-- `monke-docs/lld/<component>.md` does NOT already exist (if it does → ask: "LLD exists. Review it, or start fresh?")
+- `monke-docs/lld/<component>.md` does NOT already exist. If it does:
+  - **Recon-origin** (header: `Source: reverse-engineered`): this is the bridge from recon to implementation. Ask: "Reconstructed LLD exists. Review it to add a test plan (PG-10) and confirm design (PG-9)?" In review mode: read the existing LLD, verify/refine the design, then generate the test plan per Phase 4. Do NOT rewrite the internal design — preserve reconstruction, add what's missing. **Both PG-9 and PG-10 fire normally in review mode** — the gates are non-negotiable regardless of LLD origin. After PG-10 confirms, update LLD status from `"reconstructed"` to `"ready"` in `monke-status.md`.
+  - **Greenfield LLD exists**: ask: "LLD exists. Review it, or start fresh?"
 - Component's phase dependencies are met (all prior-phase components have LLDs)
 
 If prerequisites fail → explain what's missing and which skill to run first.
@@ -46,6 +48,16 @@ Same detection as `/monke-design:hld`. If available → Team mode (Designer+Revi
 2. Read upstream/downstream components' boundary contracts from HLD S7
 3. Read `project-specs.md` S10 (locked stack) + S2 (stack bindings)
 4. Read `project-specs.md` S9 (test bindings)
+5. If component is `agentic` or has versioned-artifact / data-dependent tool subtypes — check for seer artifacts:
+   - `monke-docs/recon/profile-*.md` — data profiles with distributions, schema, drift surface (from `/monke-seer:profile`)
+   - `monke-docs/decisions/*-experiment-*.md` — model/approach comparison ADRs with metric evidence (from `/monke-seer:experiment`)
+   - HLD S7 boundary matrix `versioned(<artifact>, <pin>)` rows + existing LLD headers `Version pins:` — registered pins (from `/monke-seer:registry`)
+   - `monke-docs/decisions/*-agentify.md` — agentic vs non-agentic verdict ADR (from `/monke-seer:agentify`)
+   - If found, read them. They inform CoALA dimensions, version pins in the LLD header, eval test thresholds, and tool subtype classification.
+   - **Conflict check:** If a `seer:agentify` verdict contradicts the HLD S3 type tag (e.g., seer says de-escalate to traditional, HLD says agentic):
+     - ⏸ Present the conflict: "Seer verdict says `<X>`, HLD says `<Y>`. Evidence: `<ADR reference>`."
+     - Options: (A) Trust HLD — note seer conflict as OQ for later review. (B) Trust Seer — amend HLD type tag via `/monke-design:hld evolve repattern`. (C) Defer — proceed with HLD tag, revisit after implementation reveals which is right.
+     - **User decides before decomposition begins.**
 
 Present context summary to user before proceeding.
 
@@ -137,7 +149,7 @@ Phase: <N>  |  Test gate: pending
 
 ## Phase 4: Test Plan
 
-After design is confirmed, generate the test plan. Follow `/monke-test:test-plan` logic inline (or tell user to run it if installed separately):
+After design is confirmed, generate the test plan. **Ownership:** `/monke-design:lld` generates the test plan inline as part of the LLD finalization flow. `/monke-test:test-plan` is the standalone equivalent for cases where the test plan needs to be created or revised separately (e.g., recon-origin LLDs that were reconstructed without test plans). Both produce the same output — test tables inside the LLD file. They are not meant to run sequentially on the same component.
 
 **Unit Test Plan:**
 | # | Function/Method | Input | Expected | Category | Mocks |
