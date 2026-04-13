@@ -55,7 +55,27 @@ Output: `monke-docs/checkpoints/phase-N-checkpoint.md`. Phase N must pass before
 
 ---
 
-## 5. Doc Interaction Map
+## 5. Recon → Implementation Bridge
+
+When the project enters via recon (existing code, no prior design), the pipeline has a different entry point but converges to the same implementation flow.
+
+```
+Recon: survey → reconstruct (HLD + LLDs) → gaps → oqs → roadmap
+                                                          │
+                                                     roadmap syncs R1-R5 to HLD S8
+                                                          │
+Bridge: per component: /monke-design:lld <component> (review mode) → PG-9 + PG-10
+                                                          │
+                                                     converges to standard pipeline
+                                                          ▼
+Implementation: Layer 0-3 (maturity tags override layer behavior) → IL gates → checkpoint
+```
+
+Recon LLDs carry maturity tags (`as-is`/`needs-work`/`stub`) instead of clean designs. The implement skill reads these and adjusts layer behavior: `as-is` = verify only, `needs-work` = improve, `stub` = build from scratch.
+
+---
+
+## 6. Doc Interaction Map
 
 ```
 design-specs.md ──produces──→ HLD + LLD artifacts
@@ -76,7 +96,7 @@ test-specs.md ──governs──→ HOW tests are written (tiers, fixtures, moc
 
 ---
 
-## 6. Failure Protocol
+## 7. Failure Protocol
 
 | Failure at | Action |
 |------------|--------|
@@ -86,3 +106,19 @@ test-specs.md ──governs──→ HOW tests are written (tiers, fixtures, moc
 | Persistent (>2 cycles) | ⏸ PG-13 — escalate to user. Likely LATS backtrack required |
 
 Claude MUST NOT weaken a test to pass a gate. Claude MUST NOT advance past a failing gate.
+
+---
+
+## 8. System Terminology
+
+Canonical names for concepts that appear across multiple skills. When in doubt, use the canonical name.
+
+| Concept | Canonical Name | Aliases Used | Defined In |
+|---------|---------------|-------------|------------|
+| LLD from recon:reconstruct | **recon-origin LLD** | reconstructed, reverse-engineered | sdlc-specs §5 |
+| Function/module code quality tag | **maturity tag** (`as-is`/`needs-work`/`stub`) | completion status, readiness | recon:reconstruct |
+| Integration test postponed for missing neighbor | **deferred test** | integration deferred, deferred integration test | implement.md Phase 5 |
+| OQ that prevents downstream work | **blocking OQ** | blocker, open blocker, P0 blocker | design:oq, status dashboard |
+| Rage scan output file | **rage-run log** | scan log, rage log, findings report | rage-run/template.md |
+| HLD header `Source: reverse-engineered` | **recon-origin marker** | reconstructed header, source tag | recon:reconstruct |
+| LLD status after review-mode PG-9+PG-10 | **ready** | confirmed, implementation-ready | design:lld, status dashboard |
