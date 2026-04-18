@@ -1,6 +1,8 @@
-# WyrdMonke Flash:Spark — What are we building?
+# WyrdMonke Flash:Spark — First Fire
 
-> **Usage:** Copy `monke-flash/` to `.claude/commands/monke-flash/`. Invoke: `/monke-flash:spark`
+> **Usage:** /monke-flash:spark [napkin]
+>
+> Drags intent out of the fog. One question at a time — spark captures what monke is about to build, before a single line of code catches.
 
 ---
 
@@ -8,7 +10,7 @@
 
 `$ARGUMENTS` parsing:
 - None when invoked standalone. This is a conversation skill.
-- When invoked via `/monke-flash:orchestra` with a napkin argument, the orchestra skips the conversational rounds and drafts `flash-brief.md` directly from the napkin. Spark itself does not parse arguments — orchestra handles the bypass.
+- When dispatched from `/monke` with a napkin argument, spark may skip the conversational rounds and draft `flash-brief.md` directly from the napkin. `/monke` passes the napkin through; spark reads it as context and still confirms the pitch before moving on.
 
 ---
 
@@ -20,6 +22,12 @@
 - No existing `monke-docs/flash/flash-brief.md` — if one exists, warn: "A flash brief already exists. Continuing will overwrite it." **Wait for confirmation.**
 
 Create `monke-docs/flash/` if it doesn't exist.
+
+---
+
+## Gate Semantics
+
+Flash runs under light rigor per S9.4/S12. HARD gates (PG-1 in scope, PG-11 in snap) always surface. SOFT gates auto-pass per the adaptive system. TRIGGERED gates fire on their triggers regardless of rigor.
 
 ---
 
@@ -120,7 +128,9 @@ Present the flash brief to the user. Read it back, not as a file dump — as a c
 
 > "Here's the napkin: You're building **X** for **Y** because **Z**. The MVP does three things: A, B, C. Constraints: D, E. Stack: F. Sound right?"
 
-**Wait for confirmation.**
+⏸ **Brief confirmation [SOFT] — napkin matches intent.**
+Auto-pass when: every field in the brief template is filled with content drawn from user answers (no TBD, no placeholders, no "monke guesses").
+Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when the condition holds.
 
 - **Confirm** -> write the file, move on
 - **Adjust** -> edit the brief, re-present
@@ -150,3 +160,11 @@ On completion, update `monke-status.md`:
 | Skip to code without a brief | Refuse. Garbage in, garbage out. The brief is the contract. |
 | Write the brief without user confirmation | Refuse. Present, pause, confirm. The user owns the vision. |
 | Scope-creep during spark (add features, plan architecture) | Refuse. Spark captures intent. Scope cuts. Sketch architects. Stay in your lane. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** `monke-docs/flash/flash-brief.md` (partial draft) written at the end of each round; the round number captured in a `Draft: round-N` comment at the top of the file.
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `flash:spark — round <N>/4` while mid-flight.
+**Recovery detection:** On re-entry, if `flash-brief.md` exists with a `Draft: round-N` marker → resume at Round N+1; if the file exists but is fully populated and Status marker is cleared → treat as already complete, warn the user before re-running; if neither → start fresh at Phase 0.

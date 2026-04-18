@@ -1,6 +1,8 @@
-# WyrdMonke Flash:Scope — What's the MVP cut?
+# WyrdMonke Flash:Scope — The Machete Pass
 
-> **Usage:** Copy `monke-flash/` to `.claude/commands/monke-flash/`. Invoke: `/monke-flash:scope`
+> **Usage:** /monke-flash:scope
+>
+> Swings the machete. The MVP gets cut down to its three load-bearing flows — everything else is named, dated, and buried in the OUT list.
 
 ---
 
@@ -16,6 +18,14 @@
 **Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
 
 - `monke-docs/flash/flash-brief.md` exists (run `/monke-flash:spark` first)
+
+---
+
+## Gate Semantics
+
+Flash runs under light rigor per S9.4/S12. HARD gates (PG-1 in scope, PG-11 in snap) always surface. SOFT gates auto-pass per the adaptive system. TRIGGERED gates fire on their triggers regardless of rigor.
+
+PG-1 lives here (Phase 6) and is HARD — never auto-passes.
 
 ---
 
@@ -124,7 +134,7 @@ Created: <date> by /monke-flash:scope
 <N> sessions | Target: <date or "whenever">
 ```
 
-**Present to user for confirmation.** This is the MVP contract — once confirmed, scope is locked. Changes during blitz require re-running scope.
+⏸ **PG-1 [HARD] — Scope lock.** Present to user for confirmation. This is the MVP contract — once confirmed, scope is locked. HARD: never auto-passes, never skippable. Changes during blitz require re-running scope.
 
 ---
 
@@ -151,3 +161,11 @@ Bump `Updated:` to today, `by /monke-flash:scope`
 | Add auth/permissions/admin to MVP scope | Refuse. Hardcode a user. Auth is a feature, not a prerequisite. |
 | Skip the OUT list | Refuse. Explicit deferred vs killed prevents scope creep during blitz. |
 | Lock scope without user confirmation | Refuse. Scope is a contract. The user signs it. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** `monke-docs/flash/flash-scope.md` (partial draft) written after Phase 3 (OUT list) so the cut decisions survive even if the skill dies before PG-1.
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `flash:scope — phase <N> (pre-lock)` while mid-flight.
+**Recovery detection:** On re-entry, if `flash-scope.md` exists without a PG-1 audit entry → resume at the phase indicated in the Status marker; if PG-1 was logged as confirmed → scope is locked, warn before re-running; if neither file nor marker → start fresh at Phase 1.
