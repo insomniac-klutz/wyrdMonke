@@ -1,6 +1,8 @@
-# WyrdMonke Test:Coverage — Coverage Analysis & Threshold Check
+# WyrdMonke Test:Coverage — The Floor Inspector
 
-> **Usage:** Copy `monke-test/` to `~/.claude/commands/monke-test/`. Invoke: `/monke-test:coverage [scope]`
+> **Usage:** `/monke-test:coverage [scope]`
+>
+> Measures line coverage against the project-specs floor, names the worst-covered files, and refuses to let anyone lower the threshold or pad the number with tests that assert existence.
 
 ---
 
@@ -35,6 +37,20 @@ If no tests found → "No tests found to measure coverage against. Write tests f
 
 ---
 
+## Inlined Coverage Rules (from test-specs S5)
+
+Spec file remains source of truth. Inlined here so the skill is self-contained.
+
+- **Floor, not target.** A minimum line coverage threshold is enforced in CI. The specific percentage is a project-specs binding (S9). Coverage is a floor, not a target.
+- **High coverage with weak assertions is worse than moderate coverage with strong assertions.** Do not game the number with tests that only assert existence.
+- **Exclusions** (and only these):
+  - Package `__init__` / index re-exports
+  - Layer 1 placeholder stubs (before Layer 2 fills them in)
+  - Generated code
+- **Gate blocked, no exceptions.** Coverage below threshold → CI fails → gate blocked. Do not lower the threshold, do not expand exclusions, do not write trivial tests to pad the number.
+
+---
+
 ## Phase 1: Resolve Tool
 
 1. Read `monke-docs/project-specs.md` S9:
@@ -42,10 +58,7 @@ If no tests found → "No tests found to measure coverage against. Write tests f
    - Coverage threshold (minimum line coverage percentage)
    - Coverage report format (if specified)
 
-2. Read `test-specs.md` S5 for exclusion rules:
-   - Package init re-exports
-   - Layer 1 placeholder stubs (before Layer 2 fills them in)
-   - Generated code
+2. Apply inlined exclusion rules (from test-specs S5 — see below).
 
 3. Determine scope filter:
    - Component → filter to files listed in that component's LLD File Map
@@ -153,9 +166,30 @@ If coverage drops below threshold:
 
 ---
 
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Lower the coverage threshold to pass the gate | Refuse. Threshold is a project-specs binding (S9), not a dial. Write the missing tests per the priority list. |
+| Expand the exclusion list beyond init re-exports, Layer-1 stubs, generated code | Refuse. Exclusions are fixed in test-specs S5. Adding more games the number. |
+| Write trivial tests that assert existence only | Refuse. "High coverage with weak assertions is worse than moderate coverage with strong assertions" (test-specs S5). Assert behavior, not presence. |
+| Treat coverage as a target to optimize rather than a floor to clear | Refuse. Floor, not target — once above threshold, energy goes to assertion quality, not coverage %. |
+| Skip coverage verification for `phase-N` because individual components passed | Refuse. Aggregate per-phase coverage must also clear the threshold — one weak component can drag a phase below. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** captured coverage-tool output (per-file percentages) held in-memory until Phase 3 (Analyze) writes the report; no draft files persisted.
+**Status line marker:** `Where We Are:` reads `test:coverage — <scope> (<running | analyzing>)` while mid-flight.
+**Recovery detection:** On re-entry, read `monke-status.md` Test Gates Coverage column for the scope: if `passed (<X>%)` is recent → tell user the floor cleared, no re-run unless forced. If `failed (<X>%/<Y>% needed)` is recent → present the priority list from the prior run (re-analyze if stale). Coverage is quick — safe to re-run on recovery.
+
+---
+
 ## Status Update
 
-On completion, update `monke-status.md`:
+**Read on entry:** `monke-status.md` — check Test Gates Coverage column for prior run; if recent and scope unchanged, warn before re-running.
+**Write on exit**, update `monke-status.md`:
 
 ### On PASS
 - Test Gates table: update Coverage column to `passed (<X>%)` for the relevant component(s)
