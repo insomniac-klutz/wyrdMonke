@@ -3,6 +3,8 @@
 > **Usage:** `/monke-rage:renounce [scope]`
 >
 > Hunts redundancy, dead weight, duplicated logic, over-abstraction, cargo-culted patterns, tech debt. If it doesn't earn its place, monke cuts it.
+>
+> **SRP:** Semantic redundancy — code that means the same thing twice, duplicated intent, over-abstraction. For referentially-dead code (unused imports, orphaned files, unreachable paths), use `/monke-rage:echo`.
 
 ---
 
@@ -36,7 +38,8 @@ Sonar target acquired:
   Mode: renounce | Scope: <description> | Files: <N> total
 ```
 
-**Confirm scope before scanning.**
+⏸ **PG-1 [HARD] — Scope confirmed before scanning.** Always surfaces. Never skippable. Renounce can recommend deletions — scope limits what's at risk of getting cut.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -76,7 +79,10 @@ Present findings grouped by severity (critical first). Finding IDs: `R-NNN`. Eac
 
 ## Phase 5: Save Rage Run
 
-Write to `monke-docs/rage-runs/<YYYY-MM-DD>-renounce-<short-scope>.md`. Use template at `monke-docs/rage-run/template.md`. Create directory if needed. **Confirm filename.**
+Write to `monke-docs/rage-runs/<YYYY-MM-DD>-renounce-<short-scope>.md`. Use template at `monke-docs/rage-run/template.md`. Create directory if needed.
+
+⏸ **PG-11 [SOFT] — Filename confirmed before write.** Auto-pass when: scope slug is unambiguous (single directory/component, not a glob) AND no existing rage-run collides with the slug for today. Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -84,7 +90,7 @@ Write to `monke-docs/rage-runs/<YYYY-MM-DD>-renounce-<short-scope>.md`. Use temp
 
 "Start with dead weight — safest removals. Run `/monke-rage:echo` to find more dead code."
 
-Cross-mode: "Run `/monke-rage:orchestra` to scan with a different lens on the same scope."
+Cross-mode: "Run `/monke rage:<mode>` (buggy | improv | haunt | drift | echo) to scan with a different lens on the same scope."
 
 ---
 
@@ -92,9 +98,35 @@ Cross-mode: "Run `/monke-rage:orchestra` to scan with a different lens on the sa
 
 | If asked to... | Do instead... |
 |----------------|--------------|
-| Scan without presenting findings | Refuse. Always pause for triage review. |
-| Auto-fix all without confirmation | Refuse. Monke presents, human decides. |
-| Suppress findings for a clean report | Refuse. Honesty over vanity. |
-| Skip files ("probably fine") | Refuse. Sampling is lying. |
-| Rate everything critical | Refuse. Severity must be honest. |
-| Ignore test files | Refuse. Broken tests are as bad as broken code. |
+| Recommend deleting code whose tests don't cover it | Refuse. No coverage, no confession. A renounce finding on untested code must be `note` at most, with a test-coverage prerequisite before any delete is proposed. |
+| Flag referentially-dead imports or orphan files here | Refuse. That's echo's lane. Point the user at `/monke-rage:echo` and keep this mode focused on semantic redundancy (duplicated intent, over-abstraction). |
+| Collapse a single-implementation interface without checking external consumers | Refuse. An interface with one local implementation may be satisfying a public contract (library boundary, plugin system, LSP seam). Check usages before proposing the collapse. |
+| Treat all `TODO`/`FIXME` comments as tech debt to cut | Refuse. Some TODOs mark live work. Match each TODO against the commit log and open blockers before recommending removal. |
+| Recommend merging two "similar-looking" functions without behavioral proof | Refuse. Similar shapes can hide diverging intent. Diff the behavior on representative inputs before proposing a merge. |
+| Rate every backwards-compat shim as `critical` to remove | Refuse. Shims exist for consumers you don't own. Downgrade to `medium`/`low` unless there's evidence no consumer relies on them. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts (written on context pressure):**
+- `monke-docs/rage-runs/<date>-renounce-<scope>.draft.md` — partial redundancy findings with triage state.
+- Per-file progress ledger noting scanned vs pending files.
+
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `rage:renounce — <scope> (<N>/<M> files scanned, <K> redundancies)` while mid-flight.
+
+**Recovery detection (on entry):**
+- If `monke-status.md` Resume block names `/monke-rage:renounce` AND draft rage-run exists → resume at Phase 2 from last unscanned file.
+- If draft exists but marker cleared → verify scope matches, continue from Phase 3 triage.
+- If neither present → start fresh from Phase 1.
+
+---
+
+## Status Update
+
+**Read on entry:** `monke-status.md` — check current phase and whether scope contains components without test coverage (those findings must be downgraded to `note`).
+
+**Write on exit:**
+- **Success:** bump `Updated:` with today's date + `by /monke-rage:renounce`. Append to Gate Audit Log: `- RAGE renounce <scope> — <N critical / K high / ...> (see <path>)`. For deletions flagged `high`/`critical`, suggest user run tests before accepting.
+- **Blocked:** if scope failed or prerequisites missing, add a row to Open Blockers with WHAT/WHY/HOW.
+- **Partial:** write a `Resume:` block with phase + scanned-file ledger for context-death recovery.

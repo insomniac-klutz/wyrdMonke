@@ -38,33 +38,93 @@ In a monorepo with 3 services: one shared HLD with 3 containers, or 3 separate `
 
 ---
 
-## Multi-Language Pipeline
+## Polyglot Boundary Ownership
 
-project-specs has a "Supported Languages" table and design-specs has language selection rules, but implementation-specs' Layer 0-3 pipeline assumes a single language context.
+v2.0 added per-container project-specs tables (S8/S9), so different containers can bind to different languages and test runners. That solves the binding side of polyglot. What's still open:
 
-If your backend is Python and frontend is TypeScript: do you run two parallel Layer 0-3 pipelines? Who owns the shared types at the cross-language boundary? How do IL gates work when Layer 0 types exist in two languages?
+- Cross-language contract ownership — which side is source-of-truth when a TS frontend calls a Python backend? The boundary matrix has a contract column, but no rule for which container OWNS it.
+- Shared type generation — OpenAPI → TS client + Python server? Protobuf? Hand-written dual types? No prescribed strategy.
+- Serialization verification as an IL-0 gate — when the contract crosses a language boundary, IL-0 should verify the wire format round-trips, not just that each side's types compile.
 
-**What a fix looks like:** A section in `implementation-specs.md` covering: per-container pipelines, cross-language contract ownership (which side is source-of-truth), serialization verification as an IL-0 gate, and shared type generation strategies.
+**What a fix looks like:** A section in `implementation-specs.md` covering: boundary contract ownership rules, supported shared-type strategies with tradeoffs, and a cross-language IL-0 serialization gate.
 
 ---
 
 ## Operations & Release Skills (`monke-ops/`)
 
-The skills package now covers design → implement → test, but the SDLC still ends at PG-11. There's no `monke-ops/` or `monke-release/` package to carry a project from "phase checkpoint passed" to "deployed, monitored, and maintainable."
+The skills package now covers design → implement → test, but the SDLC still ends at PG-11. There's no full ops skill suite to carry a project from "phase checkpoint passed" to "deployed, monitored, and maintainable." `/monke-ops:commit` exists; the rest is open.
 
-Missing skills:
-- `/monke-ops:release` — tagging, changelog from ADRs+checkpoints, deploy verification gates
-- `/monke-ops:rollback` — rollback triggers, canary/blue-green strategy
+Deferred to v2.1:
+- `/monke-ops:release` — deploy gate pipeline: tagging, changelog from ADRs + checkpoints, deploy verification gates
+- `/monke-ops:rollback` — rollback triggers, canary / blue-green strategy
 - `/monke-ops:maintain` — HLD revision cadence, LLD staleness signals, tech debt tracking, when to re-run `/monke-recon:survey`
+- `/monke-ops:observe` — observability scaffolding generated from the HLD S7 boundary matrix (dashboards per boundary, SLOs per contract, alerts per IL gate)
+- `/monke-ops:ci` — CI config generation from IL gate bindings in project-specs (each gate becomes a CI job)
 
-**What a fix looks like:** A fourth skill package (`monke-ops/`) with a `release-specs.md` or extension to `sdlc-specs.md`. Skills that carry the project past PG-11 into deployment, monitoring, and ongoing evolution.
+**What a fix looks like:** Extend `monke-ops/` with these skills plus a `release-specs.md` or extension to `sdlc-specs.md` covering the deploy → observe → maintain loop.
+
+---
+
+## Performance Profiling (`/monke-rage:bench`)
+
+Rage covers bugs, drift, dead code, security, duplication, ambitious improvements — but not performance measurement. `improv` suggests perf wins in the abstract; there's no skill that actually runs a benchmark, records baselines, and flags regressions.
+
+Deferred to v2.1. Would complement the rage suite with a measurement-first mode that produces a bench-run log analogous to rage-run.
+
+---
+
+## Dry-Run / Preview Mode
+
+Every skill in v2.0 dispatches and executes. There's no `--dry-run` mode that shows "what would I do if you confirmed?" without writing artifacts or spawning teams. Useful for learning the framework and for high-stakes gates where the user wants to preview the full action plan before committing.
+
+**What a fix looks like:** A drafter-level convention — every skill supports a `preview` argument that walks its decision tree and emits the would-be dispatches + artifact writes, with no side effects. Could be a dispatcher-level feature in `/monke preview`.
+
+---
+
+## Declarative Skill Dependency Graph
+
+The Sacred Tree is currently a shape; the mermaid is currently edges by hand. There's no machine-readable declaration of what each skill reads, writes, and dispatches. This costs us at audit time (drift between mermaid and reality) and at onboarding (users learn the graph by reading 36 files).
+
+**What a fix looks like:** Drafter defines a `Reads / Writes / Dispatches` frontmatter block at the top of every skill. A tool (or a rage mode) parses these and verifies the mermaid, README skills tables, and the actual dispatch edges in code are all in sync.
+
+---
+
+## Fast Onboarding: IaC and ML Notebook Support
+
+`/monke` fast onboarding detects manifests (package.json, pyproject.toml, Cargo.toml, etc.) but not:
+- Terraform / OpenTofu / Pulumi / CloudFormation — infrastructure containers are invisible.
+- Jupyter notebooks (`.ipynb`) — ML projects with notebook-driven experimentation show up as pre-L0 components because there's no type-check toolchain, but they're often more mature than that.
+
+Deferred to v2.1. Would extend Step 2.1's signal file table.
+
+---
+
+## Meta-Learning from Execution Annotations
+
+The Gate Audit Log records every gate outcome. The rage-runs directory records every scan finding. There's no skill that reads these across sessions to surface patterns: "this project's drift scans always find the same 3 boundaries misaligned" or "this container's IL-2 fails on the same assertion pattern."
+
+Deferred to v2.1. Could become a `/monke learn` or `/monke-rage:patterns` skill that reads the audit + rage logs and proposes ADRs or spec amendments.
+
+---
+
+## Persistent Cross-Session Teams
+
+Agent teams exist for the duration of one invocation. Teams are torn down at the end of each skill. For long-running projects with recurring review pairs or critic loops, this means re-spawning and re-briefing teammates every session — and losing whatever implicit coordination they built up.
+
+Deferred to v2.1. Would require Claude Code platform support for team persistence across sessions.
+
+---
+
+## Rage Skill Skeleton Extraction
+
+The six rage skills share ~80% of their structure (args parsing, prerequisites, rage-run template, dispatch, output format). That duplication is fine for discoverability but painful to maintain — a drafter change today requires 6 parallel edits.
+
+Deferred to v2.1. Could extract a `monke-rage/common.md` skeleton that each mode references, keeping only the mode-specific scan heuristics in the individual skill files.
 
 ---
 
 ## Skill Composition & Chaining
 
-Skills reference each other (e.g., `/monke-design:lld` hands off to `/monke-test:test-plan`), but there's no formal mechanism for one skill to invoke another. The current approach is "follow the referenced skill's logic inline" — which works but duplicates intent.
+v2.0 largely addressed this: the unified `/monke` orchestrator dispatches skills in the right order per project state, so users rarely need to chain manually. Still open: skills calling skills natively (without the orchestrator in the middle) — today, when one skill references another, it's an inline re-implementation or a handoff via status file, not a platform-native invocation.
 
-If Claude Code adds native skill chaining or tool-use within skills, the cross-references should become actual invocations rather than inline re-implementations.
-
-**What a fix looks like:** When the platform supports it, replace "follow `/monke-test:test-plan` logic inline" with actual skill invocation. Until then, the inline approach is the pragmatic choice.
+**What a fix looks like:** When Claude Code adds native skill invocation, replace "follow `/monke-test:test-plan` logic inline" with actual skill calls. The orchestrator-centric model remains; composition would just get cleaner.

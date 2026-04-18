@@ -311,7 +311,7 @@ Present the profile summary to the user. Not the raw tables — the design impli
 
 > "Here's what the data tells us about `<source>`: the shape is `<X>`, the variance is `<Y>`, the drift surface is `<Z>`. This means Layer 0 types need `<A>`, eval tests should threshold on `<B>`, and we should monitor `<C>`. Sound right?"
 
-**⏸ Wait for confirmation.**
+⏸ **PG-5 [SOFT] — Profile design implications confirmed.** Auto-pass when: single-domain profile, no class imbalance flagged, no drift surface needed (static contract tool confirmed), AND all design-implication bullets are fully populated (no unresolved `<X>`). Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds.
 
 - **Confirm** → write the profile
 - **Adjust** → revise, re-present
@@ -322,6 +322,19 @@ Present the profile summary to the user. Not the raw tables — the design impli
 ## Phase 5: Write It
 
 Write the profile to `monke-docs/recon/profile-<data-source>.md`. If pre-HLD, present inline and let the HLD skill pick it up during L3.
+
+> **Namespace note:** Profiles live under `monke-docs/recon/` because they're consumed by BOTH recon and seer skills. This is intentional shared-namespace — don't move them under `monke-docs/seer/`, downstream consumers (recon gap analysis, HLD L3, registry pins) already reference the `recon/` path.
+
+### Output declaration
+
+**Output path:** `monke-docs/recon/profile-<data-source>.md` (one file per profiled data source).
+
+**Consumers:**
+- `/monke-recon:gaps` — uses profile data to detect maturity gaps against discovered code.
+- `/monke-design:lld` — consumes profile data as CoALA input for agentic components; reads profile-* to establish data-dependent tool subtypes.
+- `/monke-implement:implement` — reads profile-* during component maturity context assembly for `agentic` or `versioned-artifact` components.
+
+The `monke-docs/recon/` namespace is shared between recon (survey/gaps outputs) and seer (profile outputs) — this is intentional. Downstream skills don't care whether profile came from recon-origin or a standalone seer run; the path is the stable contract.
 
 ---
 
@@ -348,3 +361,29 @@ Write the profile to `monke-docs/recon/profile-<data-source>.md`. If pre-HLD, pr
 | Creating a separate profiling pipeline | This is a one-time design input, not a runtime system. If you need runtime monitoring, that's a different component. |
 | Skipping the drift surface | The drift surface is the whole point. Without it, you've made a pretty spreadsheet, not a design input. |
 | Profiling everything "just in case" | Profile what the component consumes. If it doesn't touch it, don't profile it. Thoroughness is not the same as relevance. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts (written on context pressure):**
+- `monke-docs/recon/profile-<data-source>.draft.md` — partial profile with whichever domain-section has been filled.
+- Sampling ledger noting which data source slices have been read vs pending.
+
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `seer:profile — <data-source>:<domain> (phase <N>)` while mid-flight.
+
+**Recovery detection (on entry):**
+- If `monke-status.md` Resume block names `/monke-seer:profile` AND draft profile exists → resume at the phase named in Resume.
+- If draft exists but marker cleared → verify the consumer component still references this data source; continue from Phase 3 (design implications).
+- If neither present → start fresh from Phase 1.
+
+---
+
+## Status Update
+
+**Read on entry:** `monke-status.md` — confirm the target component has a versioned-artifact or data-dependent tool that warrants profiling; note its current LLD confidence.
+
+**Write on exit:**
+- **Success:** bump `Updated:` with today's date + `by /monke-seer:profile`. Note the profile path in the component's LLD row (so HLD L3 / registry / experiment can pick it up). Add a Gate Audit Log entry: `- PG-5 PROFILE <data-source> — <outcome>`.
+- **Blocked:** if no consumer component exists or the data itself is inaccessible, add a row to Open Blockers with WHAT/WHY/HOW.
+- **Partial:** write a `Resume:` block naming the phase + domain template + completed sections for context-death recovery.

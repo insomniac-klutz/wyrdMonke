@@ -109,7 +109,8 @@ Pinned in: Layer 0 versioned type (implementation-specs §3)
 Tested by: Eval tests in LLD test plan (test-specs §2)
 ```
 
-**⏸ Present each artifact's registry entry. User confirms before it becomes binding.**
+⏸ **PG-6 [HARD] — Pin each artifact. User confirms before it becomes binding.** Always surfaces. Never skippable. A pinned version is a contract — silent pins produce 3am reproducibility failures.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -182,3 +183,29 @@ A version change without updating the pin is a bug you'll find in production at 
 | Weakening eval thresholds to accommodate a new version | Fix the artifact, not the threshold. If the new version is worse, the old pin stays. That's the whole point of having thresholds. |
 | Retraining on a cron job without eval gates | A cron job is not a quality gate. Retrain whenever you want — but the new version doesn't replace the pin until eval tests pass. |
 | Updating one artifact in a chain without testing the chain | Individual artifact eval isn't enough. If the embedder changes, test the embedder AND the downstream classifier together. Chains break at the joints. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts (written on context pressure):**
+- `monke-docs/recon/registry-draft-<component>.md` — partial registry entries for artifacts confirmed so far, with remaining artifacts listed.
+- Pending-propagation ledger noting which of the three propagation targets (HLD S7, LLD header, Layer 0 types) have been updated per artifact.
+
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `seer:registry — <component> (<N>/<M> artifacts pinned)` while mid-flight.
+
+**Recovery detection (on entry):**
+- If `monke-status.md` Resume block names `/monke-seer:registry` AND draft exists → resume at the next unpinned artifact in Phase 2 or the next unpropagated target in Phase 3.
+- If draft exists but marker cleared → diff against HLD/LLD/Layer 0 to detect which propagations are already done; resume accordingly.
+- If neither present → start fresh from Phase 1.
+
+---
+
+## Status Update
+
+**Read on entry:** `monke-status.md` — confirm the target component has versioned-artifact tools in its CoALA summary; note existing pins to detect stale vs fresh state.
+
+**Write on exit:**
+- **Success:** bump `Updated:` with today's date + `by /monke-seer:registry`. For each artifact pinned, append to Gate Audit Log: `- PG-6 REGISTRY <component>:<artifact> — pinned at <version>`. Note any propagation mismatches (HLD/LLD/Layer 0) as follow-up tasks.
+- **Blocked:** if the `<<<model_registry>>>` binding is unfilled in project-specs or propagation targets don't exist, add a row to Open Blockers with WHAT/WHY/HOW.
+- **Partial:** write a `Resume:` block naming the phase + next unpinned artifact / unpropagated target for context-death recovery.

@@ -78,9 +78,9 @@ The notebook kingdom falls. The discipline of understanding data, models, and th
 
 Old world: The product manager writes a PRD. The PRD is 40 pages. Nobody reads it. The developers build something adjacent to what was described. The PM says "that's not what I meant." Repeat for 6-18 months.
 
-Wyrd world: The human IS the product. Every pause gate — and there are **fourteen** of them — is a moment where the human sees the actual artifact (not a summary, not a status update, the actual draft) and says confirm, adjust, or reject. The human doesn't write specs. The human **approves or vetoes** specs that an adversarial team of agents produced. The human's job is taste, judgment, and scope control.
+Wyrd world: The human IS the product. There are **fourteen** gate points — most adaptive per S9.4, with only three HARD gates (PG-1, PG-6, PG-11) that always surface — and when a gate fires, the human sees the actual artifact (not a summary, not a status update, the actual draft) and says confirm, adjust, or reject. The human doesn't write specs. The human **approves or vetoes** specs that an adversarial team of agents produced. The human's job is taste, judgment, and scope control.
 
-Forty pages of PRD replaced by fourteen decision points where you see exactly what's being decided and exactly what the options are.
+Forty pages of PRD replaced by fourteen decision points — most auto-passing when quality conditions hold, surfacing only when there's something for you to actually decide.
 
 ---
 
@@ -103,7 +103,7 @@ Here's what actually happened:
 ```
 OLD WORLD                          WYRD WORLD
 ─────────                          ──────────
-Product Manager    ──────────→     L1 Context + Pause Gates (PG-1..PG-14)
+Product Manager    ──────────→     L1 Context + Adaptive Gates (PG-1..PG-14 per S9.4)
 System Architect   ──────────→     design-specs.md + Agent Teams (Architect/Critic)
 Backend Developer  ──────────→     implementation-specs.md + Layer 0-3 Pipeline
 Frontend Developer ──────────→     (same pipeline, different container)

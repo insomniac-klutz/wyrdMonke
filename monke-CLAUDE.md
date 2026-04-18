@@ -4,71 +4,43 @@
 
 ## Architecture
 
-**Read `monke-status.md` first** — it shows current SDLC progress and what to do next.
+**Read `monke-status.md` first** — it shows current SDLC progress, per-component maturity, and what to do next.
 
 **Project details** (commands, stack, env vars, directory tree) are in [`project-specs.md`](monke-docs/project-specs.md).
 
+**Rigor level** (light / standard / thorough) is in [`.monke-config.md`](.monke-config.md). It determines which gates surface to the human and which auto-pass.
+
 See [`monke-mermaid.mmd`](monke-mermaid.mmd) for the full doc/directory relationship graph.
 
-Do not assume structure — derive it from `monke-status.md`, the skills, and the code. Skills read the specs they need; you don't need to read them upfront.
+Do not assume structure — derive it from `monke-status.md`, the skills, and the code. Skills inline the spec sections they need; you don't need to read spec files upfront.
 
 ## Gotchas
 
 <<<project_invariants>>>
 
-## Specs Index
+## Progressive Formalization
 
-Reference only — skills load these as needed. Do not read upfront.
-
-| Doc | Governs |
-|-----|---------|
-| [`sdlc-specs.md`](monke-docs/sdlc-specs.md) | End-to-end phase flow, doc hand-offs |
-| [`design-specs.md`](monke-docs/design-specs.md) | HLD/LLD creation, pause gates, ADRs |
-| [`implementation-specs.md`](monke-docs/implementation-specs.md) | Layer pipeline, code standards |
-| [`test-specs.md`](monke-docs/test-specs.md) | Test tiers, fixtures, coverage |
+Documentation emerges from work, not precedes it. For existing components, LLDs are reverse-engineered from code and refined as gaps are filled. For greenfield components, LLDs are designed first. Either way: by the time all components reach IL-3, the project is fully documented as a side effect. See [`sdlc-specs.md`](monke-docs/sdlc-specs.md) for the full progressive formalization model.
 
 ## Skills
 
-Skills are slash commands that orchestrate each SDLC phase. Run `/monke-init` to install everything project-local at `.claude/commands/`.
+Skills are slash commands that orchestrate each SDLC phase. Run `/monke-init` to install everything project-local at `.claude/commands/`. Entry point for ongoing work is `/monke` (the unified orchestrator).
+
+Core commands:
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-init [branch]` | Install skills, scaffold project, merge CLAUDE.md — the one-command setup |
+| `/monke-init [branch]` | Install skills, scaffold project, set rigor — the one-command setup |
 | `/monke-sync [branch]` | Update skills and specs from upstream without touching your design artifacts |
-| `/monke-status:status [action]` | Dashboard — show progress, rebuild from artifacts, find next step, list blockers |
-| `/monke-design:tinker` | Detect stack, fill project-specs and CLAUDE.md placeholders, initialize dashboard |
-| `/monke-design:hld [resume]` | Greenfield HLD creation — L1→L2→L3 with LATS, Agent Teams, PG-1 through PG-4 |
-| `/monke-design:lld <component>` | Component LLD — ADaPT decomposition, Designer+Reviewer teams, PG-8 through PG-10 |
-| `/monke-design:adr <title> [component]` | Architecture Decision Record from LATS output |
-| `/monke-design:oq [action] [id]` | Open question management — list, triage, resolve |
-| `/monke-flash:spark` | Capture the idea — ask the right questions, produce a flash brief |
-| `/monke-flash:scope` | Draw the 80% line — what's in the MVP, what's out, what "done" looks like |
-| `/monke-flash:sketch` | Napkin architecture — core entities, stack picks, folder structure, one data flow |
-| `/monke-flash:blitz` | Build the happy path — scaffold, implement core flows, skip ceremony |
-| `/monke-flash:pulse` | Smoke test + feedback loop — run MVP, collect feedback, loop to blitz |
-| `/monke-flash:snap` | Freeze the MVP — tag it, manifest what was built/cut/shortcut, hand off to recon |
-| `/monke-recon:survey` | Deep codebase scan — map components, dependencies, test coverage, code quality |
-| `/monke-recon:reconstruct` | Reverse-engineer HLD and LLDs from existing code |
-| `/monke-recon:gaps` | Gap analysis against production requirements — prioritized by blast radius |
-| `/monke-recon:oqs` | Surface implicit decisions — every shortcut and default exposed |
-| `/monke-recon:roadmap` | Phased production roadmap from survey + gaps + OQs |
-| `/monke-rage:orchestra [scope]` | Pick a rage mode and scan — menu entrypoint for all 6 modes |
-| `/monke-rage:buggy [scope]` | Hunt bugs — logic errors, null bombs, swallowed exceptions, contract violations |
-| `/monke-rage:improv [scope]` | Hunt improvements — perf wins, pattern upgrades, type safety, north stars |
-| `/monke-rage:renounce [scope]` | Hunt redundancy — dead weight, duplication, cargo cult, over-abstraction |
-| `/monke-rage:haunt [scope]` | Hunt security — injection, auth gaps, secrets, OWASP top 10 |
-| `/monke-rage:drift [scope]` | Hunt divergence — spec says X, code does Y, status is lying |
-| `/monke-rage:echo [scope]` | Hunt dead code — unreachable paths, zombie imports, orphaned files |
-| `/monke-implement:fill [group]` | Fill project-specs placeholder groups 1-8 |
-| `/monke-implement:implement <component> [layer]` | Layer 0→3 pipeline — types, stubs, bodies+tests, integration |
-| `/monke-implement:checkpoint <phase>` | Phase checkpoint — verify all IL-3s, run system tests, PG-11 sign-off |
-| `/monke-test:test-plan <component>` | Generate unit + integration test plans from LLD |
-| `/monke-test:test-run <tier> [scope]` | Execute tests by tier (unit/integration/system) and verify gates |
-| `/monke-test:coverage [scope]` | Coverage analysis against project threshold |
+| `/monke [rigor] [override]` | Unified orchestrator — auto-detects stack, routes per-component by maturity |
+| `/monke-intake "<request>"` | Natural-language feature intake — classifier + scoper team names the pipeline, one HARD approval, intake becomes permanent lead for the thread. Shortcut: `/monke "<quoted request>"`. |
+| `/monke-status:status [action]` | Dashboard — show / rebuild / next / blocked / resume |
+
+Phase skills (design / implement / test / rage / recon / flash) are discovered automatically by `/monke`. Each skill is self-contained — relevant spec sections are inlined so no external spec loading is needed at runtime.
 
 Cross-cutting rules:
-- **Pause gates:** Claude stops and waits for user confirmation at every decision point.
-- **Status tracking:** Every skill reads `monke-status.md` on entry and updates it on exit.
+- **Adaptive gates:** AUTO gates stay silent (surface on failure), HARD gates always surface, SOFT gates surface per rigor level, TRIGGERED gates fire on events.
+- **Status tracking:** Every skill reads `monke-status.md` on entry and updates it on exit. During parallel teammate work, only the lead/orchestrator writes `monke-status.md` — teammates write per-component files; lead reconciles.
 
 ## Agent Teams (mandatory for all work)
 
@@ -97,17 +69,27 @@ TeamCreate → TaskCreate (×N) → TaskUpdate (deps) → Agent w/ team_name (×
 
 1. **Explore**: `TeamCreate` → spawn 2–3 scout teammates → gather findings via `SendMessage`.
 2. **Clarify**: ask user targeted questions based on findings.
-3. **Plan**: enter plan mode. List each teammate (two-word cool and quircky codename , first word cool phrase , second word describing the task/responsibility ex phantom-parser, neon-extractor, vortex-mapper, cipher-scorer, blitz-linker), role, file ownership, dependency edges. Present for approval.
-4. **Execute**: `TeamCreate` → `TaskCreate` (×N) → wire `addBlockedBy` → spawn teammates → lead delegates only, does NOT write code → wait for all `TaskUpdate(completed)`.
+3. **Plan**: enter plan mode. List each teammate with a two-word codename:
+    - **Word 1**: an evocative, "cool" descriptor — drawn from the same *register* as examples like phantom, neon, vortex, cipher, blitz (think: cyber/noir/kinetic/arcane/elemental vibes). Do **not** reuse any word from the examples; generate fresh ones in the same spirit (e.g. specter, prism, riptide, glyph, shadow, pulse, ember, quantum, nomad, void).
+    - **Word 2**: a functional noun describing the teammate's task/responsibility (parser, extractor, mapper, scorer, linker, etc.).
+
+    Format: `codename-role` (e.g. specter-parser, prism-extractor).
+
+    **Constraints**:
+        - Every first word must be unique across the team.
+        - No first word may match the examples verbatim.
+        - Maintain the aesthetic — avoid bland descriptors (smart, fast, good).
+
+    Then list role, file ownership, dependency edges. Present for approval.
+4. **Execute**: `TeamCreate` → `TaskCreate` (×N) → wire `addBlockedBy` → spawn teammates → lead delegates original content creation → wait for all `TaskUpdate(completed)`.
 5. **Teardown**: `SendMessage(shutdown_request)` to each → `TeamDelete`.
 
 ### Rules
 
-- ALL work goes through agent teams. Single-file / <20-line exceptions require explicit user permission.
+- **Team sizing and archetype selection per [`monke-docs/design-specs.md`](monke-docs/design-specs.md) S3.1 (Team Decision Heuristic).** Default team size is 2. Use the heuristic — do not hardcode a team size.
 - Each teammate owns distinct files — no shared-file edits.
-- 3–5 teammates, 5–6 tasks each.
 - Embed full context into spawn prompts — teammates have no conversation history.
-- Lead coordinates only. If lead starts writing code, STOP and delegate.
+- **Lead coordinates and synthesizes.** Lead delegates original content creation. Lead may directly write: status updates, artifact assembly from teammate outputs, test plans, and changes under 20 lines that don't require review. If lead is drafting new feature code, architecture decisions, or substantive design content — STOP and delegate.
 - Use `planModeRequired: true` for risky teammates.
 
 ### Agent Teams Fail Gate
@@ -117,6 +99,18 @@ TeamCreate → TaskCreate (×N) → TaskUpdate (deps) → Agent w/ team_name (×
 - **Stop immediately.** Do not proceed with the skill.
 - Tell the user: "Agent teams are not configured. WyrdMonke skills require agent teams to operate. Run `/monke-sync` to pull the latest template, or copy the Agent Teams section from `monke-CLAUDE.md` into your project's `CLAUDE.md`."
 - This is a **hard gate** — no skill runs without it.
+
+**Exemptions (bootstrap paradox):** `/monke-init` and `/monke-sync` are exempt from this gate. They are the skills that CREATE or UPDATE `CLAUDE.md` itself, so requiring `CLAUDE.md`'s Agent Teams section as a prereq would be circular. They fall back to checking `monke-CLAUDE.md` in the upstream clone.
+
+---
+
+## Sacred Tree Invariant
+
+**The Sacred Tree (in `README.md`), the skill directories, and `monke-mermaid.mmd` are a single source of truth that must stay in sync.**
+
+1. **Any change to a skill directory or the root dir** (add, remove, rename a `.md` file) **MUST update the Sacred Tree** in `README.md`. Every line in the tree has a punchy, irreverent comment — new lines are no exception. Match the tone: short metaphor, vivid verb, personality. Bland descriptions are a crime against monke.
+2. **Any change to the Sacred Tree MUST update `monke-mermaid.mmd`** — add/remove nodes and edges to match the new structure.
+3. **The chain is non-negotiable:** skill dir change → Sacred Tree update → mermaid update. Skip a step, shame on monke.
 
 ## Commit Format
 
@@ -138,4 +132,3 @@ remove : deprecated recon fallback logic
 refactor : test-run tier resolution
 rename : status template to match new schema
 ```
-

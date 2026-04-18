@@ -102,7 +102,7 @@ Run a Pattern Fitness Check:
 Present the diagnostic:
 
 ```
-⏸ Diagnostic: <component>
+Diagnostic: <component>
 
 Current: <traditional | agentic — pattern>
 Candidacy score: <N/6 signals> (Path A)
@@ -110,11 +110,12 @@ Candidacy score: <N/6 signals> (Path A)
 Pattern fitness: <under-powered | over-powered | right-sized> (Path B)
 
 Evidence: <the specific signals that fired, or the specific fitness indicators>
-
-Proceed to LATS? (yes / the patient is fine / adjust assessment)
 ```
 
-If right-sized → skip to Phase 5 (record "assessed, no change needed" as ADR). Don't fix what isn't broken.
+⏸ **PG-3 [SOFT] — Diagnostic confirmed before LATS.** Auto-pass when: Path A score is 0 (stay traditional, no LATS needed) OR Path B returns `right-sized` (no LATS needed). Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds.
+Proceed to LATS / Patient is fine / Adjust assessment?
+
+If right-sized or score 0 → skip to Phase 5 (record "assessed, no change needed" as ADR). Don't fix what isn't broken.
 
 ---
 
@@ -177,7 +178,7 @@ Option C: De-escalate to traditional.
   Risk: <what you lose — any of the 6 signals that genuinely fire>
 ```
 
-**⏸ PG-5: Present LATS options. User confirms.**
+⏸ **PG-5 [SOFT] — Present LATS options.** Auto-passes when the recommended option has clear advantage — dominates runner-up on ≥2 constraints with no trade-off loss. Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when the dominance condition holds.
 
 ---
 
@@ -216,7 +217,7 @@ No draft needed. Skip to Phase 5.
 Present the full blast radius before writing anything:
 
 ```
-⏸ Agentify Impact Manifest
+Agentify Impact Manifest
 
 Component: <name>
 Verdict: <upgrade to <pattern> | de-escalate to <pattern/traditional> | keep current>
@@ -232,16 +233,15 @@ Downstream cascade:
   - Implementation: <needs rewrite | needs update | unchanged>
   - Tests: <eval tier added/removed, integration tests affected>
 
-ADR: will be written regardless of verdict
-
-Confirm / Adjust / Reject?
+ADR: will be dispatched to /monke-design:adr regardless of verdict
 ```
 
-**User MUST confirm before any writes.**
+⏸ **PG-7 [HARD] — Impact manifest confirmed before any writes.** Always surfaces. Never skippable. Pattern changes cascade through HLD/LLD/implementation — confirm the blast radius before committing.
+Confirm / Adjust / Reject?
 
-### Record the Decision
+### 5.1 Assemble the ADR Body
 
-Write ADR to `monke-docs/decisions/NNN-<component>-agentify.md`:
+Build the structured content the ADR skill will write. Keep the body in memory; don't touch disk yet:
 
 ```markdown
 # ADR-NNN: <Component> — Intelligence Assessment
@@ -259,7 +259,18 @@ Type: agentify
 ## Consequences — <what changes in HLD/LLD/implementation>
 ```
 
-### Hand Off
+### 5.2 Dispatch to the ADR Skill
+
+**This skill does not write the ADR file directly.** Dispatch to `/monke-design:adr` for auto-numbering and writing:
+
+- `type: agentify`
+- `component: <HLD S3 component>`
+- `slug: agentify`
+- `body: <the markdown body from 5.1, with the `ADR-NNN` placeholder left untouched — the ADR skill assigns the number>`
+
+The ADR skill handles numbering (scans existing `monke-docs/decisions/` for the next free `NNN`), writes the file, and returns the assigned path. Do not write to `monke-docs/decisions/` directly — that is how collisions happen when experiment + agentify + design skills all run in the same wave.
+
+### 5.3 Hand Off
 
 - **If upgrading:** "Run `/monke-design:hld evolve repattern <component>` to apply the pattern change to the HLD."
 - **If de-escalating:** Same — repattern handles both directions.
@@ -292,12 +303,40 @@ Type: agentify
 | Agentifying without profiling the data first | If the component will consume versioned-artifact or data-dependent tools, profile first. You can't write a CoALA summary without knowing what the data looks like. |
 | Upgrading because "AI is the future" | Agentic patterns add complexity, latency, cost, and non-determinism. They're justified when the 6 signals fire. Hype is not a signal. |
 | Skipping the ADR for "keep current" verdicts | Record every assessment. Future-you needs to know that this component was evaluated and deliberately kept traditional. Otherwise someone else will agentify-assess it again in three months. |
+| Writing the ADR file directly to `monke-docs/decisions/NNN-*.md` | Refuse. The `NNN` numbering is owned by `/monke-design:adr` — writing directly causes collisions when experiment + agentify run in the same wave. Dispatch to `/monke-design:adr` with the body from Phase 5.1 and let it assign the number. |
+
+---
+
+## Gate Classifications Used Here
+
+| Gate | Type | Notes |
+|------|------|-------|
+| PG-3 | SOFT | Diagnostic gate. Auto-pass: Path A score is 0 (stay traditional) OR Path B returns `right-sized` (no change needed). |
+| PG-5 | SOFT | LATS selection. Auto-pass: recommended option has clear advantage — dominates runner-up on ≥2 constraints with no trade-off loss. |
+| PG-7 | HARD | Impact manifest gate. Always surfaces before HLD/LLD/implementation cascade is confirmed. Never auto-passes. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts (written on context pressure):**
+- `monke-docs/decisions/.agentify-drafts/<component>.md` — assembled ADR body (Phase 5.1) before dispatch to `/monke-design:adr`.
+- Diagnostic ledger noting which of Path A / Path B has been run and its results.
+
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `seer:agentify — <component> (phase <N>, <verdict-draft>)` while mid-flight.
+
+**Recovery detection (on entry):**
+- If `monke-status.md` Resume block names `/monke-seer:agentify` AND draft ADR exists in `.agentify-drafts/` → resume at the phase named in Resume.
+- If draft exists but marker cleared → check if `/monke-design:adr` already wrote the ADR for this component; if yes, clean up and exit; if no, re-present Phase 5 gate.
+- If neither present → start fresh from Phase 1.
 
 ---
 
 ## Status Update
 
-On completion, update `monke-status.md`:
-- Note the assessment in "Where We Are": `Agentify assessed <component> — <verdict>`
-- If upgrade/de-escalation: note pending HLD evolution
-- Bump `Updated:` line, `by /monke-seer:agentify`
+**Read on entry:** `monke-status.md` — check the component's current type tag (traditional/agentic) and existing pattern to frame whether this is a Path A (traditional → agentic candidacy) or Path B (pattern fitness) assessment.
+
+**Write on exit:**
+- **Success:** bump `Updated:` with today's date + `by /monke-seer:agentify`. Note the assessment in "Where We Are": `Agentify assessed <component> — <verdict>`. Append to Gate Audit Log: `- PG-7 AGENTIFY <component> — <verdict> (ADR-NNN)` using the ADR path returned by `/monke-design:adr`. If upgrade/de-escalation, flag pending HLD evolution.
+- **Blocked:** if data profiling is required first (versioned-artifact or data-dependent tools) and not done, add a row to Open Blockers with WHAT/WHY/HOW pointing to `/monke-seer:profile`.
+- **Partial:** write a `Resume:` block naming the phase + current verdict draft for context-death recovery.

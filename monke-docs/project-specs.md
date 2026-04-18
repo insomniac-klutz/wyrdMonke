@@ -4,6 +4,8 @@
 
 **This is a living document.** Update it in the same commit whenever code, config, or infrastructure changes make any section inaccurate.
 
+**Most fields auto-populate** during fast onboarding. Placeholders (`<<<...>>>`) remain for manual override when auto-detection can't decide. The "Auto-detect hint" column indicates which file fast onboarding reads to fill each field.
+
 ### Continuous Improvement Directive
 
 Claude MUST keep this document current:
@@ -29,120 +31,97 @@ Claude MUST keep this document current:
 
 ---
 
-## 2. Stack Bindings
+## 2. Stack
 
-Maps implementation specs' abstract references to <<<project_name>>>'s locked stack:
+Consolidated stack info for <<<project_name>>>. Polyglot projects: one row per container.
 
-| Abstract Concept | <<<project_name>>> Binding |
-|-----------------|-------------------|
-<<<stack_bindings_table>>>
+### 2.1 Containers & Languages
 
----
+| Container | Language | Framework | Package Manager | Auto-detect hint |
+|-----------|----------|-----------|-----------------|------------------|
+<<<stack_containers>>>
 
-## 3. Dependency Configuration
+### 2.2 Locked Stack Rules
 
-<<<dependency_manifest_and_lockfile>>>
+| Layer | Technology | Notes | Auto-detect hint |
+|-------|-----------|-------|------------------|
+<<<locked_stack_table>>>
 
-### Commands
+<<<stack_enforcement_rules>>>
 
-| Action | Command |
-|--------|---------|
-<<<package_manager_commands>>>
+### 2.3 Environment
 
----
+| Variable | Purpose | Example | Auto-detect hint |
+|----------|---------|---------|------------------|
+<<<env_variables>>>
 
-## 4. Environment Configuration
+Env files:
 
-### Files
-
-| File | Purpose | Committed? |
-|------|---------|-----------|
+| File | Purpose | Committed? | Auto-detect hint |
+|------|---------|-----------|------------------|
 <<<env_files>>>
 
-### Required Variables
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-<<<env_variables>>>
----
-
-## 5. Directory Structure
-
-### Implementation
+### 2.4 Directory Structure
 
 <<<source_tree>>>
 
-### Tests
+Test dirs:
 
 <<<test_tree>>>
 
 ---
 
-## 6. <<<additional_tooling>>> Configuration
+## 3. Commands
 
----
+Per-container commands for install, build, run, and IL gate verification. Polyglot projects keep each container's toolchain separate — a Python backend and TS frontend don't share a linter or test runner.
 
-## 7. CI/CD Pipeline (GitHub Actions)
+### 3.1 Package Manager & Scripts
 
-<<<ci_cd_pipeline>>>
----
+| Container | Install | Build | Run | Auto-detect hint |
+|-----------|---------|-------|-----|------------------|
+<<<package_manager_commands>>>
 
-## 8. Implementation Specs Bindings
+### 3.2 IL Gate Commands (per container)
 
-Maps abstract IL gate verifications to <<<project_name>>> commands:
+Maps abstract IL gate verifications to per-container shell commands. **Polyglot support:** each container declares its own linter, type checker, test runner, and coverage tool.
 
-| Gate | Abstract Verification | <<<project_name>>> Command |
-|------|----------------------|-------------------|
+| Container | IL-0 Command | IL-1 Command | IL-2 Command | IL-3 Command | Auto-detect hint |
+|-----------|--------------|--------------|--------------|--------------|------------------|
 <<<il_gate_commands>>>
 
----
+IL gate semantics:
+- **IL-0**: types/models exist, linter passes, imports resolve
+- **IL-1**: interfaces/stubs exist with types, compilable
+- **IL-2**: implementations + unit tests with assertions, coverage > 0%
+- **IL-3**: integration tests + coverage meets threshold
 
-## 9. Test Specs Bindings
+### 3.3 CI/CD Pipeline
 
-| Abstract Concept | <<<project_name>>> Binding |
-|-----------------|-------------------|
-| Test framework | <<<test_framework>>> |
-| Test runner command | <<<test_runner_command>>> |
-| Unit test dir | <<<unit_test_dir>>> |
-| Integration test dir | <<<integration_test_dir>>> |
-| System test dir | <<<system_test_dir>>> |
-| Object factory library | <<<object_factory_library>>> |
-| HTTP mock library | <<<http_mock_library>>> |
-| Async test support | <<<async_test_support>>> |
-| DB fixture strategy | <<<db_fixture_strategy>>> |
-| Coverage tool | <<<coverage_tool>>> |
-| Coverage threshold | <<<coverage_threshold>>> |
-| Shared fixture file | <<<shared_fixture_file>>> |
-| Eval metric library | <<<eval_metric_library>>> |
-| Eval test dataset dir | <<<eval_test_dataset_dir>>> |
+| Container | CI File | Jobs | Auto-detect hint |
+|-----------|---------|------|------------------|
+<<<ci_cd_pipeline>>>
 
 ---
 
-## 10. Design Specs Bindings
+## 4. Bindings
 
-### 10.1 Locked Stack
+Test framework and fixture bindings per container. Populate one row per container with its own toolchain.
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-<<<locked_stack_table>>>
+### 4.1 Test Bindings (per container)
 
-### 10.2 Supported Languages
+| Container | Test Framework | Test Runner | Unit Dir | Integration Dir | System Dir | Coverage Tool | Threshold | Auto-detect hint |
+|-----------|----------------|-------------|----------|-----------------|------------|---------------|-----------|------------------|
+<<<test_bindings>>>
 
-| Language | Best For | LLM Integration | Test Framework |
-|----------|---------|-----------------|----------------|
-<<<supported_languages_table>>>
+### 4.2 Fixture & Mock Bindings (per container)
 
-### 10.3 Stack Enforcement Rules
+| Container | Object Factory | HTTP Mock | Async Support | DB Fixture Strategy | Shared Fixture File | Auto-detect hint |
+|-----------|----------------|-----------|---------------|---------------------|---------------------|------------------|
+<<<fixture_bindings>>>
 
-<<<stack_enforcement_rules>>>
+### 4.3 Design Specs Bindings
 
-### 10.4 Modifications
-
-<<<design_specs_modifications>>>
-
-### 10.5 Pause Gate Artifacts
-
-Maps design specs pause gates to <<<project_name>>>-specific artifacts:
+Pause gate artifact locations:
 
 | Gate | Artifact Location |
 |------|------------------|
@@ -163,15 +142,27 @@ Maps design specs pause gates to <<<project_name>>>-specific artifacts:
 | ADRs | `monke-docs/decisions/NNN-slug.md` |
 | Open questions | `monke-docs/open-questions.md` |
 
-### 10.6 AI & Data Science Infrastructure (Optional)
+Supported languages (for language-choice exceptions, PG-6):
+
+| Language | Best For | LLM Integration | Test Framework |
+|----------|---------|-----------------|----------------|
+<<<supported_languages_table>>>
+
+Design specs modifications specific to <<<project_name>>>:
+
+<<<design_specs_modifications>>>
+
+### 4.4 AI & Data Science Infrastructure (Optional)
 
 If the project uses versioned-artifact or data-dependent tools (design-specs S1.2) — LLM model versions, NLP pipeline artifacts, CV model weights, embedding indices, or any artifact that changes when retrained — bind these:
 
-| Concept | <<<project_name>>> Binding |
-|---------|-------------------|
-| Model registry | <<<model_registry>>> |
-| Feature store | <<<feature_store>>> |
-| Experiment tracker | <<<experiment_tracker>>> |
-| Eval metric thresholds | <<<eval_metric_thresholds>>> |
+| Concept | <<<project_name>>> Binding | Auto-detect hint |
+|---------|----------------------------|------------------|
+| Model registry | <<<model_registry>>> | `mlflow.yaml`, `wandb/` |
+| Feature store | <<<feature_store>>> | `feast.yaml`, `feature_store.yaml` |
+| Experiment tracker | <<<experiment_tracker>>> | `wandb/`, `mlruns/`, `.neptune/` |
+| Eval metric library | <<<eval_metric_library>>> | `requirements.txt` (e.g. evaluate, ragas) |
+| Eval metric thresholds | <<<eval_metric_thresholds>>> | project config |
+| Eval test dataset dir | <<<eval_test_dataset_dir>>> | `tests/eval/`, `data/eval/` |
 
 Same `<<<placeholder>>>` convention. If the project has no versioned-artifact or data-dependent components, leave this section empty or delete it.

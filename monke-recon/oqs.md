@@ -1,4 +1,4 @@
-# WyrdMonke Recon:OQs — What don't we know?
+# WyrdMonke Recon:OQs — The Fog Index
 
 > **Usage:** Copy `monke-recon/` to `.claude/commands/monke-recon/`. Invoke: `/monke-recon:oqs`
 
@@ -29,6 +29,12 @@ Recommended but not required:
 - `monke-docs/recon/recon-gaps.md` — gaps feed into OQs. Without it, you're mining blind on the "what's missing" front.
 - `monke-docs/lld/*.md` — component-level detail sharpens boundary questions.
 - `monke-docs/flash/flash-manifest.md` — flash shortcuts are OQ goldmines.
+
+**LLD trust check.** Before using LLDs to mine open questions about cross-component contracts, read the `Confidence:` header of each LLD consumed. If `Confidence: auto-generated` AND the component's contract feeds a boundary-level OQ, surface a warning (not a gate — just advisory):
+
+> OQ mining is consuming an auto-generated LLD (`<component>.md`) for boundary reasoning. Auto-generated LLDs may produce OQs that are actually contract ambiguities (missing type info, inferred signatures), not real decisions in need of review. Recommend: run `/monke-design:lld <component>` review first, or mark OQs touching `<component>` as provisional in the output.
+
+If `Confidence: reviewed` or `verified` → proceed normally.
 
 ---
 
@@ -172,7 +178,9 @@ Each OQ must have:
 
 ## Decision Gate
 
-⏸ **Present all OQs grouped by dimension.**
+⏸ **OQ review [SOFT] — questions triaged.**
+Auto-pass when: every OQ has `Discovered-during`, `Affects`, `Blocks`, and at least one `Option` beyond "keep as-is"; no OQ duplicates a row in `recon-gaps.md`; numbering is sequential with no gaps.
+Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when the condition holds.
 
 Show counts per dimension first. Then walk through each OQ. User can:
 - **Confirm** → mark as "resolved → confirmed as-is" (decision was fine, just implicit)
@@ -192,6 +200,27 @@ Update `open-questions.md` with user's responses before finalizing.
 - **OQs with "Blocks: nothing" are still valuable.** Confirming an implicit decision IS valuable. It turns an accident into a choice.
 - **Be specific.** "Should we rethink the data model?" is useless. "The User entity has a JSON blob for preferences — should those be separate columns for queryability?" is useful.
 - **Aim for 130-160 lines.** Dense questions, not essays. Each OQ is 5-6 lines max.
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Raise OQs that duplicate gaps | Refuse. Gap = missing thing. OQ = implicit decision. If `/monke-recon:gaps` already flagged it, don't re-raise. |
+| Write vague OQs ("should we rethink the data model?") | Refuse. Be specific: "The User entity has a JSON blob for preferences — should those be separate columns for queryability?" Vague questions can't be resolved. |
+| Demand answers for OQs with `Blocks: nothing` | Refuse. Confirming an implicit decision is valuable on its own. It turns an accident into a choice. Don't pressure. |
+| Raise theoretical-purity OQs ("REST vs gRPC for 3% speed") | Refuse. Focus on decisions that MATTER for production — error contracts, scale breaks, compliance, data integrity. |
+| Skip flash-manifest shortcut mining when the manifest exists | Refuse. Every shortcut is suspect. "Good enough for now" is over — each shortcut becomes an OQ unless already a gap. |
+| Auto-resolve OQs without user input | Refuse. OQs require human sign-off. Monke surfaces, human decides. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** `monke-docs/open-questions.md` (partial draft) written after each dimension (Implicit Decisions, Boundaries, Scale, Business Logic, Flash Shortcuts). Numbering stays sequential across dimensions.
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `recon:oqs — mining <dimension>` while mid-flight.
+**Recovery detection:** On re-entry, if `open-questions.md` exists with some dimension headers populated → resume at first empty dimension (respecting existing OQ-N numbering); if all dimensions covered but Decision Gate not logged → re-present grouped summary; if file absent → start fresh at Phase 1.
 
 ---
 
