@@ -18,6 +18,58 @@ Clone it. Plug it in. Watch monke think before monke builds, for once.
 
 ---
 
+## Install & Invoke
+
+**30-second setup.** One file clone, one command.
+
+**Linux/macOS:**
+```bash
+mkdir -p .claude/commands
+curl -o .claude/commands/monke-init.md https://raw.githubusercontent.com/insomniac-klutz/wyrdMonke/trunk/monke-init.md
+```
+
+**Windows (PowerShell):**
+```powershell
+mkdir -Force ".claude\commands"
+curl.exe -o ".claude\commands\monke-init.md" https://raw.githubusercontent.com/insomniac-klutz/wyrdMonke/trunk/monke-init.md
+```
+
+Then in Claude Code, run `/monke-init` once. Skills install, project scaffolds, `CLAUDE.md` merges. Ready.
+
+**Then type what you want in plain English.**
+
+```
+/monke "<your wish>"
+```
+
+Examples:
+```
+/monke "build a Slack bot that summarizes GitHub PRs"
+/monke "add webhook retry with exponential backoff"
+/monke "the auth service is leaking memory somewhere, find it"
+/monke "refactor the payment module to drop the stripe dep"
+/monke "audit this codebase for production readiness"
+```
+
+Monke reads your wish + project state, classifies it (greenfield-mvp / greenfield-production / feature-on-existing / bug-fix / refactor-cleanup / investigation), proposes a pipeline, asks **once** to approve, then walks the whole thing end-to-end as permanent lead. One HARD gate up front, one deliverable at the back. Never auto-commits.
+
+**Command shortcuts (the ones you'll actually use):**
+
+| Shape | Behavior |
+|-------|----------|
+| `/monke "<wish>"` | Natural-language intake — **the front door**. Classifier names the pipeline, one approval, walks end-to-end. |
+| `/monke` | State-reader — resume after context death or eyeball current state before acting. |
+| `/monke <rigor>` | Set rigor: `light` / `standard` / `thorough`. Persists to `.monke-config.md`. |
+| `/monke <skill>` | Direct skill dispatch: `/monke flash`, `/monke design:lld auth-service`, `/monke rage:buggy`, etc. |
+| `/monke-status:status [action]` | Dashboard: `show` / `rebuild` / `next` / `blocked` / `resume`. |
+| `/monke-ops:commit` | Grouped, confirmed commits. Never auto-invoked by any pipeline. |
+
+Context death? Just re-run `/monke` bare. The Resume-block parser extracts both `Phase:` and `Skill:` from `monke-status.md` and dispatches directly back to the right sub-skill with `resume:<N>` appended. No state loss, no re-approval.
+
+That's the whole flow. Everything below is reference material — the file tree, the skill catalog, the deeper invocation variants (flash brief template, bare-hands install, existing-codebase adapter), the full arc diagram, and philosophy.
+
+---
+
 ## Branch Flow
 
 ```
@@ -239,65 +291,24 @@ Thirty-seven rituals, organized by when monke needs them. One command to rule th
 
 ---
 
-## Quick Start
+## Quick Start — deeper variants
 
-### The Front Door (the wish — recommended)
+The [Install & Invoke](#install--invoke) section at the top covers the front door. These are the longer paths for when you want more control, are onboarding an existing codebase, or want to pre-stress-test an idea with a pitch doctor before burning Claude Code tokens.
 
-Type what you want in plain English. Monke figures out the rest.
-
-```
-/monke "<your wish>"
-```
-
-Examples:
-```
-/monke "build a Slack bot that summarizes GitHub PRs"
-/monke "add webhook retry with exponential backoff"
-/monke "the auth service is leaking memory somewhere, find it"
-/monke "refactor the payment module to drop the stripe dep"
-/monke "audit this codebase for production readiness"
-```
-
-What happens:
+**What happens when you type `/monke "<wish>"` (in more detail):**
 
 1. **Route.** If `.monke-config.md` doesn't exist yet, monke silently chains `/monke-init` first (no ceremony — you don't have to know about it).
 2. **Classify + scope.** A 2-teammate scout team (classifier + scoper) reads your wish + project state and names the pipeline: greenfield MVP / greenfield production / feature on existing / bug-fix / refactor-cleanup / investigation.
 3. **Propose.** Monke writes a pipeline proposal (steps, expected gates, affected components, estimated human touchpoints) to `monke-docs/intake/<feature-thread-id>.md`.
 4. **One HARD gate — PG-1.** You approve / adjust / abort. This is the ONLY gate you MUST hit before work starts.
 5. **Walk the pipeline.** `/monke-intake` becomes permanent lead. Dispatches sub-skills (flash / design / implement / test / rage / recon / ops) as workers. Sub-skills surface their own HARD/TRIGGERED gates when something genuinely needs a decision; SOFT gates auto-pass under `light`/`standard` rigor.
-6. **Close.** Phase 6 summary. Changes are in the working tree — run `/monke-ops:commit` when you're ready. Monke never auto-commits.
+6. **Close.** Phase 6 summary. Changes are in the working tree — run `/monke-ops:commit` when you're ready.
 
 Quotation rules:
 - **Quoted multi-word** → always routes to intake: `/monke "..."`.
 - **Unquoted but >3 words** → also routes to intake: `/monke build a slack bot`.
 - **Single unquoted word** → checked against known container names. If unknown, monke asks if you meant a quoted request.
 - **Recognized keyword** (rigor level, skill override) → direct dispatch.
-
-### The One Command (the vanilla way)
-
-After `/monke-init`, bare `/monke` still works:
-
-```
-/monke
-```
-
-Monke reads the project, figures out what state you're in (greenfield, existing code, mid-flight, resuming after context death), and recommends the next move. No natural-language parsing — it's the state-reader, not the wish-granter. Use this for resume after context death or when you want to eyeball the state before acting. For actual work, prefer the wish form above.
-
-### Command shortcuts
-
-| Shape | Behavior |
-|-------|----------|
-| `/monke "<wish>"` | Natural-language intake (front door). Classifier names the pipeline, one approval, walks end-to-end. |
-| `/monke-intake "<wish>"` | Same as above, explicit. |
-| `/monke` | State detection + recommend next action. No intake parsing. |
-| `/monke <rigor>` | Set rigor: `light` / `standard` / `thorough`. Persists to `.monke-config.md`. |
-| `/monke <container>` | Scope routing to one container (e.g. `/monke auth-service`). Must match a container name in `monke-status.md`. |
-| `/monke <skill>` | Direct skill dispatch: `/monke flash`, `/monke recon`, `/monke design:lld auth-service`, `/monke rage:buggy`, etc. |
-| `/monke intake "<wish>"` | Explicit intake override (same as first shape, different syntax). |
-| `/monke-status:status [action]` | Dashboard: `show` / `rebuild` / `next` / `blocked` / `resume`. |
-| `/monke-ops:commit` | Grouped, confirmed commits. Never auto-invoked by any pipeline. |
-
-Recovery after context death: just re-invoke `/monke` bare. The Resume-block parser reads `monke-status.md`, extracts both `Phase:` and `Skill:`, and dispatches directly to the right sub-skill with `resume:<N>` appended. No state loss, no re-approval, no manual picking up.
 
 ### The Flash Way (new idea? start here)
 
@@ -352,26 +363,6 @@ Monke bootstraps `/monke-init` automatically if config is missing, classifies as
 1. Run `/monke-init` in your project.
 2. Run `/monke flash` — enters the flash chain directly, `spark` asks its conversation questions.
 3. Each flash skill hands back to `/monke`; `/monke` presents the next step.
-
-### The Ritual Way (recommended — for the disciplined)
-
-1. Grab the one ring:
-
-   **Linux/macOS:**
-   ```bash
-   mkdir -p .claude/commands
-   curl -o .claude/commands/monke-init.md https://raw.githubusercontent.com/insomniac-klutz/wyrdMonke/trunk/monke-init.md
-   ```
-
-   **Windows (PowerShell):**
-   ```powershell
-   mkdir -Force ".claude\commands"
-   curl.exe -o ".claude\commands\monke-init.md" https://raw.githubusercontent.com/insomniac-klutz/wyrdMonke/trunk/monke-init.md
-   ```
-2. Open your target project in Claude Code
-3. Whisper `/monke-init`
-4. Skills install. Project scaffolds. CLAUDE.md merges. Monke is ready.
-5. Run `/monke` — it auto-detects, asks rigor once, routes from there. Every subsequent session, same command.
 
 ### The Bare Hands Way
 

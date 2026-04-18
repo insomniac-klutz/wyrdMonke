@@ -1,5 +1,7 @@
 # The Philosophy of the Wyrd Monke
 
+> **Source:** https://github.com/insomniac-klutz/wyrdMonke/
+
 > *"Return to monke" was never about going backwards. It was about remembering what the jungle already knew.*
 
 ---

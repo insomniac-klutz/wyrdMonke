@@ -86,14 +86,17 @@ SKILL_DIRS=$(find "$TMPDIR" -maxdepth 1 -type d -name 'monke-*' \
 Auto-discover root-level skill files (only files with `> **Usage:**` — excludes reference docs like drafter, phil, log, fut):
 
 ```bash
-# Root-level monke-*.md that are slash commands OR referenced meta-docs (e.g. drafter).
-# Match either a "> **Usage:**" line (real slash commands) OR a "> *" italic tagline
-# blockquote (meta-docs like monke-drafter.md that CLAUDE.md links to).
+# Root-level monke-*.md + monke.md that are slash commands. Only files with a
+# literal "> **Usage:**" line — italic-tagline meta-docs (drafter, phil, log,
+# fut) are reference material and stay upstream.
 # Exclude monke-CLAUDE.md (handled in Phase 3) and user project files (NEVER overwrite).
-ROOT_CMDS=$(find "$TMPDIR" -maxdepth 1 -name 'monke-*.md' \
+ROOT_CMDS=$(find "$TMPDIR" -maxdepth 1 \( -name 'monke-*.md' -o -name 'monke.md' \) \
   ! -name 'monke-CLAUDE.md' \
   ! -name 'monke-status.md' \
-  -exec sh -c 'grep -qE "^> (\*\*Usage:\*\*|\*)" "$1" && basename "$1"' _ {} \;)
+  -exec sh -c 'head -10 "$1" | grep -q "^> \*\*Usage:\*\*" && basename "$1"' _ {} \;)
+# head -10 bound matters: monke-drafter.md shows a "> **Usage:**" line at L45
+# as an EXAMPLE of what skills should contain. Real skills put Usage at L3.
+# The line-10 cap excludes drafter's example-in-doc without a named-file skip.
 ```
 
 For each discovered skill directory and root command, overwrite in `.claude/commands/`:

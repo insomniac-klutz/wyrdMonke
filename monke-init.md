@@ -54,12 +54,15 @@ SKILL_DIRS=$(find "$TMPDIR" -maxdepth 1 -type d -name 'monke-*' \
   ! -name 'monke-owns' \
   -exec sh -c 'ls "$1"/*.md >/dev/null 2>&1 && basename "$1"' _ {} \;)
 
-# Root-level monke-*.md that are slash commands OR referenced meta-docs (e.g. drafter).
-# Match either a "> **Usage:**" line (real slash commands) OR a "> *" italic tagline
-# blockquote (meta-docs like monke-drafter.md that skills link to).
+# Root-level monke-*.md + monke.md that are slash commands. Only files with a
+# literal "> **Usage:**" line get copied — italic-tagline meta-docs (drafter,
+# phil, log, fut) are reference material, not slash commands, and stay upstream.
 # Exclude monke-CLAUDE.md (handled in Phase 3) and monke-mermaid.mmd (scaffolded separately).
-ROOT_CMDS=$(find "$TMPDIR" -maxdepth 1 -name 'monke-*.md' ! -name 'monke-CLAUDE.md' \
-  -exec sh -c 'grep -qE "^> (\*\*Usage:\*\*|\*)" "$1" && basename "$1"' _ {} \;)
+ROOT_CMDS=$(find "$TMPDIR" -maxdepth 1 \( -name 'monke-*.md' -o -name 'monke.md' \) ! -name 'monke-CLAUDE.md' \
+  -exec sh -c 'head -10 "$1" | grep -q "^> \*\*Usage:\*\*" && basename "$1"' _ {} \;)
+# head -10 bound matters: monke-drafter.md shows a "> **Usage:**" line at L45
+# as an EXAMPLE of what skills should contain. Real skills put Usage at L3.
+# The line-10 cap excludes drafter's example-in-doc without a named-file skip.
 
 mkdir -p .claude/commands
 for DIR in $SKILL_DIRS; do
@@ -180,7 +183,7 @@ Report:
 | Overwrite an existing `CLAUDE.md` without first writing `CLAUDE.md.bak` | Refuse. Users put project secrets, gotchas, and custom rules in `CLAUDE.md`. Silent overwrite deletes work. Always back up, then merge — never replace. |
 | Skip Phase 3 rigor prompt and write a default `standard` silently | Refuse. PG-INIT is HARD. Every downstream gate behavior (SOFT surfaces, auto-pass thresholds) reads from `.monke-config.md`. A default the user never confirmed corrupts the entire session's gate math. |
 | Re-run `/monke-init` on a project that already has `monke-status.md` + populated `monke-docs/` | Refuse. Init is a one-shot bootstrap. Re-running clobbers skills but can't safely reinitialize status. Suggest `/monke-sync` to pull upstream skill updates without touching user state. |
-| Copy upstream skill files while leaving `monke-drafter.md` behind (because the `> **Usage:**` filter rejected it) | Refuse. Target-project `CLAUDE.md` references `monke-drafter.md` as the skill-authoring law. A project missing the drafter is a project where every `/monke-sync`-era skill update silently violates rules nobody can read. Use the relaxed ROOT_CMDS filter that includes `> *` meta-docs. |
+| Copy italic-tagline meta-docs (`monke-drafter.md`, `monke-phil.md`, `monke-log.md`, `monke-fut.md`) into target-project `.claude/commands/` | Refuse. `.claude/commands/` is for slash-invocable skills only — files with a literal `> **Usage:**` line. Meta-docs are reference material that lives upstream (users consult them in the wyrdMonke source repo, not their target project). The strict filter keeps the target namespace clean. |
 | Proceed past a failed clone (branch not found, network error) by defaulting to `trunk` | Refuse. The user asked for a specific branch for a reason (feature preview, pinned release). Stop with the error. Let the user pick. |
 
 ---
