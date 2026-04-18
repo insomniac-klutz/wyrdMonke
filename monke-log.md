@@ -4,6 +4,78 @@
 
 ---
 
+## 2.1 — 2026-04-18 — monke opens the front door
+
+**Theme:** One leader, many workers. The user types a wish in plain English and the framework figures out the rest — classifier and scoper team name the kind of work, a single HARD gate approves the pipeline, and `monke-intake` stays as permanent lead through every step. No more "which skill do I run?" cognitive tax. Natural language becomes the entry point; the sub-skill zoo becomes a backstage workforce.
+
+### Added
+- **`monke-intake.md`** — the front door skill at repo root. Accepts natural-language requests (`/monke-intake "<wish>"` or `/monke "<wish>"` shortcut). Phases: read project state → spawn classifier+scoper worker-pool (2 teammates, parallel) → synthesize pipeline proposal → PG-1 HARD approval → walk pipeline as permanent lead → close feature thread. Writes feature thread file to `monke-docs/intake/<thread-id>.md` with lock-file for context-death recovery. Full drafter §1-8 compliance (canonical status line, `resume:<N>` convention, CDP).
+- **`monke.md` dispatch** — natural-language shortcut: `/monke` ARG1 that is quoted OR exceeds 3 words routes to `/monke-intake` with the string as payload. Added `intake` as an explicit override in the case table.
+
+### Changed
+- **`README.md`** — Sacred Tree adds `monke-intake.md` line under `monke.md`. Skill-count bumped 36 → 37. Quick Start rewritten with **The Front Door** as the primary entry (`/monke "<wish>"`), 5 worked examples, 6-step walkthrough, quotation rules, and 8-row command-shortcuts table. Flash Way + Already-got-code sections updated to lead with the natural-language shortcut.
+- **`monke-mermaid.mmd`** — `INTAKE` node added to root subgraph. Edge from `MONKE` to `INTAKE` for quoted-request dispatch. Outbound edges from `INTAKE` to every downstream skill it dispatches (flash/design/implement/test/rage/recon/ops) matching the per-class pipeline table.
+- **`monke-CLAUDE.md`** — Core commands table gains `/monke-intake` row.
+- **`monke-docs/status-template.md`** — `## Features` section added (10-column schema: Thread ID, Request, Class, Rigor, Started, Status, Progress, Last step, Last outcome, Finished) so `/monke-intake` has a canonical row template to write to. Sole-writer rule: only intake writes to Features.
+
+### Pre-flight fixes (post-audit hardening)
+- **`monke-intake.md` Prerequisites** — greenfield cold-start auto-chains `/monke-init` (invisible bootstrap step) when `.monke-config.md` is missing AND `$REQUEST` is set. Rigor inferred from request keywords: `quick` / `mvp` / `prototype` → light, `production` / `compliance` / `enterprise` → thorough, else standard.
+- **`monke-intake.md` Phase 1** — Step 1.0 (cold-start bootstrap dispatch) + Step 1.5 (ensure `monke-docs/intake/` directory exists) added. Original reading list renumbered to Step 1.1.
+- **`monke-intake.md` Phase 4** — `## Features` section is created from template if missing before the row is written.
+- **`monke-intake.md` Phase 2** — `ops:commit` removed from all default pipeline chains (commit is never auto-dispatched; it's a Phase 6 closing suggestion only). Bare `test` disambiguated to `test:test-plan` (design-time) or `test:test-run` (post-implement).
+- **`monke-intake.md` Phase 5** — Multi-LLD dispatch spec: when feature-on-existing has N new components, intake spawns a worker-pool per design-specs S3.1 (one worker per component), relays PG-9 gates in dependency order, single-LLD fallback, boundary-shift guard.
+- **`monke.md`** — Resume-block parser extended to extract both `Phase:` AND `Skill:` fields. When Skill names a specific sub-skill (e.g. `/monke-intake`), dispatch jumps directly to that skill with `resume:<N>` appended — no Phase 1 re-run, no intake-thread loss on context death.
+- **`monke.md`** — unquoted-token else-branch validates against `monke-status.md` Components table before treating as container scope. Unknown short token → WHAT/WHY/HOW hint asking if the user meant a quoted request. No more silent misroute.
+- **`monke-rage/buggy.md`** — `resume:<N>` added as second positional (per drafter §7) with explicit phase-resume branching. Previously treated the arg as scope path.
+- **`monke-flash/snap.md`** — status line marker explicitly declared in CDP (`Where We Are: flash:snap — drafting manifest (section <N>)` mid-flight; Phase-6 close marker documented). Cites drafter §8 as canonical.
+
+### Philosophy shift
+- **One leader, many workers.** Intake is the permanent lead for a feature thread. `monke.md` continues as general orchestrator for resume / status / direct skill overrides, but once a natural-language request dispatches to intake, intake owns the thread end-to-end. No cascade between orchestrators; sub-skills run as workers.
+- **Zero onboarding required.** The user no longer needs to know the framework's shape to use it. Type a wish; monke names the pipeline; one approval starts everything. Missing config? Intake bootstraps invisibly.
+
+---
+
+## 2.0 — 2026-04-14 — monke unifies
+
+**Theme:** Seven orchestras collapse into one all-seeing eye. Correctness becomes invisible infrastructure — gates auto-confirm silently, hard gates surface uncompromisingly, rigor tunes everything in between. The framework learns to onboard an existing codebase in one hard gate, auto-generate stub HLDs and LLDs, and route per-component instead of per-phase. Progressive formalization replaces all-or-nothing ceremony.
+
+### Added
+- **`monke.md`** — the unified orchestrator at repo root: fast onboarding (auto-detect stack → auto-map structure → per-component maturity scan → one hard gate PG-1), per-component routing tree, rigor-aware gate handling, Context Death Protocol, recovery via status + artifact verification, override dispatch for any skill
+- **`monke-docs/design-specs.md`** — S9.4 gate classification (AUTO / SOFT / HARD / TRIGGERED), S12 rigor system (light / standard / thorough), S3.1 Team Decision Heuristic + 4 archetypes (worker pool, review pair, multi-role, critic loop), S3.2 team failure modes, S3.7 team re-use rules, S6.3 LLD Confidence ladder (auto-generated → reviewed → approved), S7 namespace disambiguation note
+- **`monke-docs/sdlc-specs.md`** — §0 Unified Orchestrator section describing `/monke` as the front door
+- **`monke-docs/project-specs.md`** — per-container tables in S8 (stack bindings) and S9 (test bindings) so polyglot projects can bind per container
+- **`monke-docs/status-template.md`** + **`monke-status/status.md`** — per-component maturity table with Confidence column (auto-generated / reviewed / approved) and Override column, Resume block for Context Death Protocol, rigor display, next-action line
+- **`monke-drafter.md`** — Context Death Protocol section, gate classification rules, WHAT/WHY/HOW error template, Progressive Formalization doctrine
+- **`monke-design/hld.md`** — Auto-Generated HLD Flow (H9) with mixed-confidence header, per-section confidence flags, boundary matrix confidence tags (HIGH / LOW)
+- **`monke-design/lld.md`** — Confidence header (auto-generated / reviewed / approved), stub LLD algorithm (B1) with minimum fields: File Map, Signatures, Maturity Tags, Decomposition Tree, Unit Test Plan skeleton, Integration Test Plan skeleton
+- **`monke-implement/implement.md`** — `LAYER="auto"` support with stub LLD prerequisite check, H3 critic-notes read for LLD team dispatch
+- **`monke-CLAUDE.md`** + **`CLAUDE.md`** — references design-specs S3.1 Team Decision Heuristic and S3.7 team re-use
+
+### Changed
+- **All 11 major skills** — specs inlined, 11 taglines fixed from definitions to metaphors (H4), gate classifications applied, no remaining "follow design-specs.md S..." cross-refs. Self-contained.
+- **`monke-init.md`** — collapsed to 1 gate, B6 exempt (init doesn't need Agent Teams Gate since it's bootstrapping them)
+- **`monke-sync.md`** — B6 exempt from Agent Teams Gate (sync bootstraps it too)
+- **`monke-CLAUDE.md`** + **`CLAUDE.md`** — stripped inline team heuristics, now reference design-specs S3.1 (B7 fixed)
+- **`monke-drafter.md`** — gate rules tightened, Context Death Protocol section added (H1 fixed)
+- **`monke-docs/project-specs.md`** — S8 and S9 rewritten as per-container tables (B4 fixed, supports polyglot)
+- **`monke-docs/status-template.md`** + **`monke-status/status.md`** — per-component maturity table with Confidence + Override columns (H8, H10 fixed), rigor display, resume action
+- **`README.md`** — Sacred Tree updated (removed 7 orchestras, added `monke.md`), Skills table rewritten (added `/monke` top-level row, removed orchestra rows), Quick Start leads with `/monke`, Full Arc diagram updated to show unified orchestrator as front door
+- **`monke-mermaid.mmd`** — removed 7 orchestra nodes, added single `MONKE` node with fast-onboarding subflow (scan → status → hard gate → dispatch) and edges from MONKE to every skill
+
+### Deleted
+- **`monke-design/orchestra.md`**, **`monke-implement/orchestra.md`**, **`monke-test/orchestra.md`**, **`monke-flash/orchestra.md`**, **`monke-recon/orchestra.md`**, **`monke-rage/orchestra.md`**, **`monke-seer/orchestra.md`** — replaced by the unified `monke.md` orchestrator. Seven fury menus become one all-seeing eye.
+
+### Philosophy shift
+- **Correctness as invisible infrastructure** — AUTO gates pass silently, surface only on failure. Rigor tunes which SOFT gates auto-pass. Hard gates (PG-1, PG-6, PG-11) remain unconditionally human.
+- **Progressive formalization** — fast onboarding produces `auto-generated` confidence artifacts. Review upgrades to `reviewed`. Full design upgrades to `approved`. Components advance independently.
+- **Adaptive rigor** — `light` / `standard` / `thorough` per design-specs S12. Auto-escalation triggers (>15 components, compliance keywords, versioned-artifact tools, polyglot) recommend rigor at PG-1; user always decides.
+- **Per-component routing** — the orchestrator recommends one next action per loop, not a roadmap. Worker-pool parallelism offered when independent components share maturity.
+
+### Complexity budget
+- 1 new root file (monke.md), 7 files deleted (orchestras), 4 new doctrine sections in design-specs, 1 gate classification system, 1 rigor system, 4 team archetypes, 0 new IL gates, 0 new PG gates
+
+---
+
 ## 0.9 — 2026-04-14 — monke bridges the gap
 
 **Theme:** Recon meets implementation. Every skill learns to read maturity tags, route recon-origin LLDs, and die gracefully when context runs out. Agent teams get the TeamCreate/teammate rewrite. The terminology table drops so everyone speaks the same monke.

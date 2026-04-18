@@ -12,7 +12,7 @@
 
 ## What is this
 
-WyrdMonke is what happens when you give a monkey a clipboard, a software engineering degree, and access to Claude Code. It's a full SDLC-in-a-box — design specs, implementation pipelines, test gates, and 26 slash commands that walk your AI through the entire process so you don't have to explain "no, write the types first" for the twenty-sixth time.
+WyrdMonke is what happens when you give a monkey a clipboard, a software engineering degree, and access to Claude Code. It's a full SDLC-in-a-box — design specs, implementation pipelines, test gates, and one unified orchestrator (`/monke`) that walks your AI through the entire process so you don't have to explain "no, write the types first" for the twenty-sixth time.
 
 Clone it. Plug it in. Watch monke think before monke builds, for once.
 
@@ -36,10 +36,14 @@ screectch → ooh-aah → trunk
 
 ```
 wyrdMonke/
+├── monke.md                     # the switchboard — picks the right skill for the job
+├── monke-intake.md              # the front door — speak your wish, monke builds the pipeline
 ├── monke-init.md                # the one ring — copy this, run it, everything installs
 ├── monke-sync.md                # pull new skills and specs without nuking your work
 ├── monke-CLAUDE.md              # the scroll Claude reads first
 ├── monke-mermaid.mmd            # the map of all sacred texts
+├── CLAUDE.md                    # the house rules — read before every skill fires
+├── monke-claude-settings.json   # the permissions dial — seeded once into .claude/
 ├── monke-status/                # the all-seeing eye
 │   └── status.md                # where am I, what's next, what's broken
 ├── monke-fut.md                 # walls monke hasn't climbed yet
@@ -48,7 +52,6 @@ wyrdMonke/
 ├── monke-drafter.md             # the skeleton law — how to write a skill that doesn't embarrass monke
 │
 ├── monke-design/                # monke thinks before monke builds
-│   ├── orchestra.md             # the thinking monke's autopilot — reads status, picks the next move
 │   ├── tinker.md                # detect your stack, fill every placeholder, get the dashboard running
 │   ├── hld.md                   # the grand dreaming — L1, L2, L3, argue at every fork
 │   ├── lld.md                   # decompose one component until it begs for mercy
@@ -56,13 +59,11 @@ wyrdMonke/
 │   └── oq.md                    # the anxiety manager — triage the 3am hauntings
 │
 ├── monke-implement/             # monke builds (shape before behavior)
-│   ├── orchestra.md             # the assembly line — feeds components through the layer grinder
 │   ├── fill.md                  # customs agent for <<<placeholders>>> — thorough, relentless
 │   ├── implement.md             # types → stubs → bodies → tests, gate after gate after gate
 │   └── checkpoint.md            # PG-11 — the final boss, demands your signature in blood
 │
 ├── monke-test/                  # monke proves it wasn't hallucinating
-│   ├── orchestra.md             # the paranoid monke's quality loop — what's untested, what's failing
 │   ├── test-plan.md             # plot every happy path, edge case, and nightmare scenario
 │   ├── test-run.md              # run it, watch it fail, categorize the grief, try again
 │   └── coverage.md              # find the untouched bananas and shame them into existence
@@ -71,7 +72,6 @@ wyrdMonke/
 │   └── commit.md                # grouped, confirmed commits — never reckless, always receipted
 │
 ├── monke-rage/                  # monke hunts what you're ignoring
-│   ├── orchestra.md             # pick your fury — six flavors of pain, one menu
 │   ├── buggy.md                 # angry monke smells a bug — logic errors, null bombs, swallowed exceptions
 │   ├── improv.md                # ambitious monke sees the mountain — perf wins, pattern upgrades, north stars
 │   ├── renounce.md              # minimalist monke with a machete — dead weight, cargo cult, duplication
@@ -80,14 +80,12 @@ wyrdMonke/
 │   └── echo.md                  # archaeologist monke sweeping the tomb — dead code, zombie imports, ghosts
 │
 ├── monke-seer/                  # monke reads the bones before the build
-│   ├── orchestra.md             # the bone reader's autopilot — sniff the status, pick the divination
 │   ├── profile.md               # taste the data before you cook with it
 │   ├── experiment.md            # LATS with loss curves instead of architecture diagrams
 │   ├── registry.md              # pin your artifacts or they'll pin you
 │   └── agentify.md              # stupefy in reverse — LATS any component's intelligence
 │
 ├── monke-flash/                # monke builds fast, regrets later (0→80%)
-│   ├── orchestra.md            # the full sprint — zero to MVP, one session, no excuses
 │   ├── spark.md                # the barstool pitch — convince monke before monke writes a line
 │   ├── scope.md                # the machete — hack the dream down to size, draw the 80% line
 │   ├── sketch.md               # napkin architecture — entities on a cocktail napkin, stack on a dare
@@ -96,7 +94,6 @@ wyrdMonke/
 │   └── snap.md                 # the honest confession — freeze the MVP, list every sin, walk away
 │
 ├── monke-recon/                # monke cleans up what monke broke (80→100%)
-│   ├── orchestra.md            # the full reconstruction — one session, no mercy
 │   ├── survey.md               # the morning-after inventory — count the damage, map the wreckage
 │   ├── reconstruct.md          # archaeologist mode — dig proper blueprints from the flash rubble
 │   ├── gaps.md                 # the gap hunter — everything between "it works" and "ship it"
@@ -109,7 +106,7 @@ wyrdMonke/
 │   ├── implementation-specs.md  # how monke builds (shape before behavior)
 │   ├── test-specs.md            # how monke proves it works
 │   ├── project-specs.md         # the binding scroll (<<<your stuff here>>>)
-│   ├── monke-readsme.md          # the origin myth — where these docs crawled out of
+│   ├── monke-readsme.md         # the origin myth — where these docs crawled out of
 │   ├── status-template.md       # blank dashboard, ready to fill
 │   ├── hld.md                   # the grand blueprint (empty until you dream)
 │   ├── open-questions.md        # the 3am hauntings (empty until you ask)
@@ -145,13 +142,20 @@ banana-X.X-bruised  # hotfix
 
 ## The Skills
 
-Forty-three rituals, organized by when monke needs them.
+Thirty-seven rituals, organized by when monke needs them. One command to rule them all.
+
+### The One Ring
+
+| Skill | What it does |
+|-------|-------------|
+| `/monke` | The all-seeing eye. One command, reads your project, names the state, points at the ripest banana. Handles greenfield, existing code, mid-flight projects, resume after context death. Dispatches to every other skill below. Start here. |
+| `/monke-intake` | The front door. Type a wish in plain English — `/monke-intake "add webhook retry with exponential backoff"` or use the shortcut `/monke "<request>"`. Classifier + scoper worker-team name what kind of work it is and which components get touched. One HARD approval gate, then intake becomes permanent lead and walks the whole pipeline — dispatching flash / design / implement / test / rage / ops skills as workers, tracking the feature thread end-to-end in `monke-docs/intake/`. |
 
 ### The Summoning
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-init` | The one ring. Copy this single file, run it, and it clones the repo, installs all 13 skills project-local, scaffolds your project, and merges CLAUDE.md — then tells you what to do next. |
+| `/monke-init` | The one ring. Copy this single file, run it, and it clones the repo, installs skills project-local, scaffolds your project, and merges CLAUDE.md — then tells you what to do next. |
 | `/monke-sync` | The updater. Pulls fresh skills and specs from upstream without touching your HLD, LLDs, decisions, or any other work. Diffs changed specs and asks before overwriting. |
 
 ### The All-Seeing Eye
@@ -164,7 +168,6 @@ Forty-three rituals, organized by when monke needs them.
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-design:orchestra` | The thinking monke's autopilot. Reads the dashboard, figures out what design work needs doing next, recommends it, and runs it when you say yes. One command to rule the design phase. |
 | `/monke-design:tinker` | The caffeinated census taker. Detects your stack, asks you 47 questions, fills every `<<<placeholder>>>` in project-specs and CLAUDE.md, and lights up the dashboard. Run this right after `/monke-init`. |
 | `/monke-design:hld` | The grand dreaming. Monke builds the blueprint level by level — context, containers, components — arguing with itself (or an actual Critic agent) at every fork. Resume when your context window inevitably dies mid-vision. |
 | `/monke-design:lld` | Zooms into one component and decomposes it until there's nowhere left to hide. Designer proposes, Reviewer attacks, monke refines. Three rounds, then the adults get involved. |
@@ -175,7 +178,6 @@ Forty-three rituals, organized by when monke needs them.
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-flash:orchestra` | The full sprint. Chains spark→scope→sketch→blitz→pulse→snap in one session. Paste your claude.ai napkin and monke builds the MVP without you typing six commands. Resumes from where context died. |
 | `/monke-flash:spark` | "What are we building?" — monke asks the right questions, captures the idea on a napkin, and refuses to let you scope-creep before the first line of code exists. |
 | `/monke-flash:scope` | Draws the 80% line. What's in the MVP, what's out, what "done" looks like. Ruthlessly cuts scope because monke knows you'll try to sneak auth in. |
 | `/monke-flash:sketch` | Napkin architecture. Core entities, stack picks, folder structure, one data flow. No C4, no LATS — just enough shape to start building. |
@@ -187,7 +189,6 @@ Forty-three rituals, organized by when monke needs them.
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-recon:orchestra` | The full reconstruction. Chains survey→reconstruct→gaps→oqs→roadmap in one session. Resumes from where context died. One command to go from "it works" to "here's the production plan." |
 | `/monke-recon:survey` | Deep scan of the codebase. Maps components, dependencies, test coverage, code quality. Works with flash MVPs or any existing code. The inventory before the renovation. |
 | `/monke-recon:reconstruct` | Reverse-engineers proper HLD and LLDs from existing code. The archaeologist that turns your scrappy MVP into formally documented architecture. |
 | `/monke-recon:gaps` | Gap analysis against production requirements. Error handling, security, performance, observability, testing — everything missing, prioritized by blast radius. |
@@ -198,7 +199,6 @@ Forty-three rituals, organized by when monke needs them.
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-implement:orchestra` | The assembly line that never sleeps. Reads the dashboard, picks the next component, feeds it through Layer 0→3, and drives checkpoints when phases complete. You confirm, monke builds. |
 | `/monke-implement:fill` | The boring-but-necessary one. Detects your stack, suggests values for every `<<<placeholder>>>` in project-specs, and makes you confirm each one like a very thorough customs agent. |
 | `/monke-implement:implement` | The Layer 0→3 pipeline. Types first (shape), then stubs (interface), then bodies interleaved with tests (behavior), then integration tests (proof). Each layer has a gate. No skipping. Resume at any layer when you come back tomorrow. |
 | `/monke-implement:checkpoint` | The final boss of each phase. Checks every component's test gates, runs system tests end-to-end, writes the checkpoint record, and demands your signature. PG-11 — the gate that never sleeps, never forgives, never skips. |
@@ -207,7 +207,6 @@ Forty-three rituals, organized by when monke needs them.
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-rage:orchestra` | Pick your fury. Presents all six rage modes, you pick the mood, monke hunts. Say "all" for the full sweep. The menu that starts the pain. |
 | `/monke-rage:buggy` | Angry monke smells something wrong. Logic errors, null bombs, swallowed exceptions, contract violations, race conditions, resource leaks. Also scans tests for false passes and flakiness. |
 | `/monke-rage:improv` | Ambitious monke sees the mountain. Performance wins, API ergonomics, pattern upgrades, type safety gaps, readability crimes, architecture smells, north stars you haven't reached yet. |
 | `/monke-rage:renounce` | Minimalist monke with a machete. Duplication, dead weight, over-abstraction, cargo-culted patterns, config bloat, tech debt, vestigial code that served its purpose three migrations ago. |
@@ -219,7 +218,6 @@ Forty-three rituals, organized by when monke needs them.
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-seer:orchestra` | The bone reader's autopilot. Reads the dashboard, sniffs for components that need profiling, experiments that need running, or artifacts that need pinning. Points at the right ritual and waits. |
 | `/monke-seer:profile` | Profiles a data source before you design with it. Schema, distributions, drift surface — the statistical properties that become Layer 0 types and eval baselines. Not an EDA notebook. A design input. |
 | `/monke-seer:experiment` | Runs model/approach comparisons as LATS branches with metric evidence. Records results as ADRs. The experiment tracker is `monke-docs/decisions/`, not a separate platform. |
 | `/monke-seer:registry` | Tracks versioned artifacts (models, indices, rulesets) with version pins, eval thresholds, and retraining triggers. The model registry as a project-specs binding, not a service. |
@@ -229,7 +227,6 @@ Forty-three rituals, organized by when monke needs them.
 
 | Skill | What it does |
 |-------|-------------|
-| `/monke-test:orchestra` | The paranoid monke's quality loop. Reads the dashboard, finds what's untested or failing, recommends the next testing action, runs it when you confirm. The diagnostic dashboard with hands. |
 | `/monke-test:test-plan` | Reads your LLD and plots every way the component could break. Happy paths, edge cases, error cases, and if your component is agentic, the special horrors: stale memory, infinite loops, tool failures. Writes the plan directly into the LLD. |
 | `/monke-test:test-run` | Runs the tests and checks the gates. Unit→IL-2, integration→IL-3, system→PG-11. When things fail, it doesn't just cry — it categorizes the failure and tells you where to dig. Escalates to you after two failed cycles because at that point, maybe the design is wrong. |
 | `/monke-test:coverage` | Counts the untouched bananas. Runs your coverage tool, compares against your threshold, shows you exactly which functions and boundaries have no tests, and maps the gaps back to your LLD test plan so you know what to write next. Coverage is a floor, not a trophy. |
@@ -243,6 +240,64 @@ Forty-three rituals, organized by when monke needs them.
 ---
 
 ## Quick Start
+
+### The Front Door (the wish — recommended)
+
+Type what you want in plain English. Monke figures out the rest.
+
+```
+/monke "<your wish>"
+```
+
+Examples:
+```
+/monke "build a Slack bot that summarizes GitHub PRs"
+/monke "add webhook retry with exponential backoff"
+/monke "the auth service is leaking memory somewhere, find it"
+/monke "refactor the payment module to drop the stripe dep"
+/monke "audit this codebase for production readiness"
+```
+
+What happens:
+
+1. **Route.** If `.monke-config.md` doesn't exist yet, monke silently chains `/monke-init` first (no ceremony — you don't have to know about it).
+2. **Classify + scope.** A 2-teammate scout team (classifier + scoper) reads your wish + project state and names the pipeline: greenfield MVP / greenfield production / feature on existing / bug-fix / refactor-cleanup / investigation.
+3. **Propose.** Monke writes a pipeline proposal (steps, expected gates, affected components, estimated human touchpoints) to `monke-docs/intake/<feature-thread-id>.md`.
+4. **One HARD gate — PG-1.** You approve / adjust / abort. This is the ONLY gate you MUST hit before work starts.
+5. **Walk the pipeline.** `/monke-intake` becomes permanent lead. Dispatches sub-skills (flash / design / implement / test / rage / recon / ops) as workers. Sub-skills surface their own HARD/TRIGGERED gates when something genuinely needs a decision; SOFT gates auto-pass under `light`/`standard` rigor.
+6. **Close.** Phase 6 summary. Changes are in the working tree — run `/monke-ops:commit` when you're ready. Monke never auto-commits.
+
+Quotation rules:
+- **Quoted multi-word** → always routes to intake: `/monke "..."`.
+- **Unquoted but >3 words** → also routes to intake: `/monke build a slack bot`.
+- **Single unquoted word** → checked against known container names. If unknown, monke asks if you meant a quoted request.
+- **Recognized keyword** (rigor level, skill override) → direct dispatch.
+
+### The One Command (the vanilla way)
+
+After `/monke-init`, bare `/monke` still works:
+
+```
+/monke
+```
+
+Monke reads the project, figures out what state you're in (greenfield, existing code, mid-flight, resuming after context death), and recommends the next move. No natural-language parsing — it's the state-reader, not the wish-granter. Use this for resume after context death or when you want to eyeball the state before acting. For actual work, prefer the wish form above.
+
+### Command shortcuts
+
+| Shape | Behavior |
+|-------|----------|
+| `/monke "<wish>"` | Natural-language intake (front door). Classifier names the pipeline, one approval, walks end-to-end. |
+| `/monke-intake "<wish>"` | Same as above, explicit. |
+| `/monke` | State detection + recommend next action. No intake parsing. |
+| `/monke <rigor>` | Set rigor: `light` / `standard` / `thorough`. Persists to `.monke-config.md`. |
+| `/monke <container>` | Scope routing to one container (e.g. `/monke auth-service`). Must match a container name in `monke-status.md`. |
+| `/monke <skill>` | Direct skill dispatch: `/monke flash`, `/monke recon`, `/monke design:lld auth-service`, `/monke rage:buggy`, etc. |
+| `/monke intake "<wish>"` | Explicit intake override (same as first shape, different syntax). |
+| `/monke-status:status [action]` | Dashboard: `show` / `rebuild` / `next` / `blocked` / `resume`. |
+| `/monke-ops:commit` | Grouped, confirmed commits. Never auto-invoked by any pipeline. |
+
+Recovery after context death: just re-invoke `/monke` bare. The Resume-block parser reads `monke-status.md`, extracts both `Phase:` and `Skill:`, and dispatches directly to the right sub-skill with `resume:<N>` appended. No state loss, no re-approval, no manual picking up.
 
 ### The Flash Way (new idea? start here)
 
@@ -285,10 +340,18 @@ Don't let me scope-creep. If I start describing feature #47, drag me back
 to the one thing that proves the idea.
 ```
 
-When you've got the napkin, bring it to Claude Code:
-1. Run `/monke-init` in your project
-2. Run `/monke-flash:spark` — paste the napkin, monke takes it from there
-3. `spark → scope → sketch → blitz → pulse → snap` — MVP in hours, not weeks
+When you've got the napkin, two ways:
+
+**Shortest path (v2.1+):** just use the front door with your napkin as the wish.
+```
+/monke "<paste napkin here — or a one-line summary of it>"
+```
+Monke bootstraps `/monke-init` automatically if config is missing, classifies as greenfield-mvp, and walks the flash chain `spark → scope → sketch → blitz → pulse → snap`. MVP in hours, one HARD gate at the front.
+
+**Explicit path:** traditional flash invocation.
+1. Run `/monke-init` in your project.
+2. Run `/monke flash` — enters the flash chain directly, `spark` asks its conversation questions.
+3. Each flash skill hands back to `/monke`; `/monke` presents the next step.
 
 ### The Ritual Way (recommended — for the disciplined)
 
@@ -308,8 +371,7 @@ When you've got the napkin, bring it to Claude Code:
 2. Open your target project in Claude Code
 3. Whisper `/monke-init`
 4. Skills install. Project scaffolds. CLAUDE.md merges. Monke is ready.
-5. Run `/monke-design:tinker` — answer the questions, monke fills the scrolls, you sip coffee.
-6. Run `/monke-status:status` to see your dashboard.
+5. Run `/monke` — it auto-detects, asks rigor once, routes from there. Every subsequent session, same command.
 
 ### The Bare Hands Way
 
@@ -322,7 +384,16 @@ When you've got the napkin, bring it to Claude Code:
 
 ### Already got code? Monke adapts.
 
-Run `/monke-init` then `/monke-recon:survey` — it scans your existing codebase, and from there `/monke-recon:reconstruct` reverse-engineers an HLD from the wreckage. The full recon pipeline surfaces every gap, question, and shortcut you've been ignoring.
+Two ways in:
+
+**Front door (v2.1+):** type what you want to change.
+```
+/monke "<add this feature | fix this bug | refactor that module | audit for prod-readiness>"
+```
+Monke fast-onboards (scans stack, maps components, tags maturity), intake classifier+scoper names the pipeline against your actual components, one HARD approval gate, walks it end-to-end.
+
+**State-reader:** bare `/monke`.
+Fast onboarding scans your codebase, writes a stub HLD + stub LLDs, and presents PG-1 with a rigor recommendation. Confirm or ask for the deeper path via `/monke recon` (full survey → reconstruct → gaps → OQs → roadmap).
 
 It's like a code review, but the reviewer is a monkey with a clipboard.
 
@@ -344,47 +415,44 @@ It's like a code review, but the reviewer is a monkey with a clipboard.
                      │
                      │  (bring the napkin to Claude Code)
                      ▼
-              monke-flash                         monke-recon
-         ┌───────────────────┐          ┌──────────────────────────┐
-         │  spark → scope →  │          │  survey → reconstruct →  │
-         │  sketch → blitz → │ ──snap──→│  gaps → oqs → roadmap   │
-         │  pulse ↺          │          │                          │
-         └───────────────────┘          └──────────┬───────────────┘
-              0% ─────── 80%                       │
-                                                   ▼
-                                         monke production pipeline
-                                    ┌──────────────────────────────┐
-                                    │  design    → tinker, hld,    │
-                                    │              lld, adr, oq    │
-                                    │  implement → fill, implement,│
-                                    │              checkpoint      │
-                                    │  test      → test-plan,      │
-                                    │              test-run,        │
-                                    │              coverage        │
-                                    └──────────────┬───────────────┘
-                                         80% ─────── 100%
-                                                   │
-                                                   ▼
-                                    ┌──────────────────────────────┐
-                                    │         monke-rage            │
-                                    │    "you're never done"        │
-                                    │                              │
-                                    │  buggy  improv  renounce     │
-                                    │  haunt  drift   echo         │
-                                    │                              │
-                                    │  rage ──→ fix ──→ ship ──┐   │
-                                    │   ↑                      │   │
-                                    │   └──────────────────────┘   │
-                                    │                              │
-                                    │  every version gets raged.   │
-                                    │  every rage finds something. │
-                                    │  you ship anyway. then rage  │
-                                    │  again. this is the way.     │
-                                    └──────────────────────────────┘
+              ┌──────────────────┐
+              │     /monke       │  the all-seeing eye
+              │                  │  reads project state
+              │  scan → status   │  picks the next move
+              │  → hard gate     │  dispatches one skill
+              │  → per-component │  loops until shipped
+              │    routing       │
+              └────────┬─────────┘
+                       │
+         ┌─────────────┼─────────────┬──────────────┐
+         ▼             ▼             ▼              ▼
+    monke-flash   monke-recon   production       monke-rage
+    ┌─────────┐   ┌──────────┐  ┌──────────┐    ┌─────────┐
+    │ spark → │   │ survey → │  │ tinker   │    │ buggy   │
+    │ scope → │   │ recon →  │  │ hld/lld  │    │ improv  │
+    │ sketch →│   │ gaps →   │  │ adr/oq   │    │ renounce│
+    │ blitz → │   │ oqs →    │  │ fill     │    │ haunt   │
+    │ pulse ↺ │   │ roadmap  │  │ implement│    │ drift   │
+    │ snap    │   │          │  │ checkpt  │    │ echo    │
+    │         │   │          │  │ test-*   │    │         │
+    └─────────┘   └──────────┘  └──────────┘    └─────────┘
+      0→80%         80→100%      80→100%         always
+                                                (eternal loop)
+
+                     every path converges.
+                  /monke points at one banana.
+                        you pick. you confirm.
+                        monke dispatches. repeat.
+                                  │
+                                  ▼
+                             ship ──→ rage ──→ ship ──┐
+                              ↑                       │
+                              └───────────────────────┘
 ```
 
-**Four modes of building. One monke.**
+**One command. Four modes of building. One monke.**
 
+- **/monke** is the all-seeing eye — the front door for every path below. Reads the project, names the state, recommends one next move. You never need to remember which skill is right; monke picks.
 - **claude.ai** is the barstool — hash out the idea before you write a line of code. Business case, core tech reqs, "is this even worth building?" If the answer is no, you just saved yourself a week. If yes, bring the napkin.
 - **Flash** is jazz — improvisational, fast, conversational. Monke builds before monke thinks too hard. Gets something breathing in hours, not weeks.
 - **Recon** is archaeology — methodical, thorough, reconstructive. Monke digs through the wreckage of what flash built and maps every shortcut, every implicit decision, every "I'll fix that later."
@@ -395,6 +463,8 @@ It's like a code review, but the reviewer is a monkey with a clipboard.
 ### How the specs connect
 
 ```
+/monke (the all-seeing eye) — reads state, routes to the right skill below
+
 sdlc-specs.md (the prophecy)
     ├── design-specs.md    → monke thinks, produces HLD + LLD
     │   └── rituals: tinker, hld, lld, adr, oq
@@ -406,7 +476,7 @@ sdlc-specs.md (the prophecy)
 
 monke-flash pipeline → 0 to 80% MVP sprint
     └── rituals: spark, scope, sketch, blitz, pulse, snap
-    
+
 monke-recon pipeline → 80 to 100% production crawl
     └── rituals: survey, reconstruct, gaps, oqs, roadmap
 ```
