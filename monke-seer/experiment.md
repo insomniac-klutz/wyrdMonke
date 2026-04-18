@@ -1,4 +1,4 @@
-# WyrdMonke Seer:Experiment — LATS with loss curves instead of architecture diagrams
+# WyrdMonke Seer:Experiment — The Bake-Off
 
 > **Usage:** `/monke-seer:experiment <component> <hypothesis>`
 >
@@ -102,7 +102,8 @@ Contender B: <approach>.
 - Any component where multiple approaches need metric evidence to resolve a LATS branch
 - Define the metrics before running. Cherry-picking metrics after seeing results is not science, it's marketing.
 
-**⏸ Present the framing. User confirms before experiments run.**
+⏸ **PG-3 [SOFT] — Contender framing confirmed before experiments run.** Auto-pass when: exactly 2 contenders, both framed with identical metric target + constraints shape, AND no contender requires infrastructure the project-specs stack doesn't already support. Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -122,7 +123,8 @@ Define how you'll actually measure. Be specific — vague experiment design prod
 
 **Isolation matters.** If you change the model AND the prompt AND the temperature between Contender A and B, you've learned nothing. Change one variable. Hold everything else constant. This is 8th-grade science, not novel methodology.
 
-**⏸ Present experiment design. User confirms before execution.**
+⏸ **PG-4 [SOFT] — Experiment design confirmed before execution.** Auto-pass when: dataset + metrics + success criteria + isolation + cost budget + sample size all populated (no hand-wave), AND exactly one variable differs between contenders. Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds. Execution burns compute — a fail here is cheap; a fail in Phase 3 is expensive.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -143,11 +145,17 @@ Fill every cell. "N/A" is acceptable. Empty cells are not.
 
 ## Phase 4: Record the Decision
 
-Experiments are ADRs. Not notebooks. Not Slack threads. Not "I remember we tried that once." Write to `monke-docs/decisions/NNN-<component>-<experiment-slug>.md`:
+Experiments are ADRs. Not notebooks. Not Slack threads. Not "I remember we tried that once."
+
+**This skill does not write the ADR file directly.** Dispatch to `/monke-design:adr` for auto-numbering and writing — that skill owns the `monke-docs/decisions/` namespace and prevents `ADR-NNN` collisions when multiple teammates write ADRs concurrently.
+
+### 4.1 Assemble the ADR Body
+
+Build the structured content the ADR skill will write. Keep the body in memory; don't touch disk yet:
 
 ```markdown
 # ADR-NNN: <Component> — <Experiment Title>
-Status: proposed | accepted | superseded by ADR-XXX
+Status: proposed
 Date: YYYY-MM-DD  |  Component: HLD S-X.Y
 Type: experiment
 
@@ -176,9 +184,33 @@ Contender B: <approach>. Metric target: <threshold>.
 ## Consequences — eval thresholds set to <values>, version pin set to <version>, retraining trigger set to <condition>
 ```
 
-**⏸ PG-5: Present the ADR. User confirms the selection.**
+### 4.2 Gate on the Selection
+
+⏸ **PG-5 [SOFT] — Present the ADR body. User confirms the selection.** Auto-passes when the recommended option has clear advantage — dominates runner-up on ≥2 constraints with no trade-off loss. Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when the dominance condition holds.
+Confirm / Adjust / Reject?
+
+### 4.3 Dispatch to the ADR Skill
+
+On confirm, dispatch to `/monke-design:adr` with:
+
+- `type: experiment`
+- `component: <HLD S3 component>`
+- `slug: <experiment-slug>`
+- `body: <the markdown body from 4.1, with the `ADR-NNN` placeholder left untouched — the ADR skill assigns the number>`
+
+The ADR skill handles numbering (scans existing `monke-docs/decisions/` for the next free `NNN`), writes the file, and returns the assigned path. Do not write to `monke-docs/decisions/` directly — that is how collisions happen when experiment + agentify + design skills all run in the same wave.
 
 The winning approach's artifact gets pinned via `/monke-seer:registry`. The losing approaches stay in the ADR as runner-ups — when the world changes, you know what to try next without starting from scratch.
+
+---
+
+## Gate Classifications Used Here
+
+| Gate | Type | Notes |
+|------|------|-------|
+| PG-3 | SOFT | Contender framing. Auto-pass: exactly 2 contenders, identical metric-target shape, no new infrastructure required. |
+| PG-4 | SOFT | Experiment design. Auto-pass: every field populated, exactly one variable differs between contenders. |
+| PG-5 | SOFT | Experiment selection. Auto-pass: recommended option has clear advantage — dominates runner-up on ≥2 constraints with no trade-off loss. |
 
 ---
 
@@ -204,3 +236,30 @@ The winning approach's artifact gets pinned via `/monke-seer:registry`. The losi
 | Cherry-picking metrics after seeing results | Define success criteria BEFORE running. If the metrics surprise you, that's data — don't hide it, don't spin it. |
 | Skipping the profile and jumping straight to experiments | Profile first. Experimenting without understanding your data is like taste-testing with a cold — you can't tell what you're measuring. |
 | Reporting "Contender A is better" without numbers | Better how? By how much? At what cost? At what latency? Show the table or it's an opinion, not an experiment. |
+| Writing the ADR file directly to `monke-docs/decisions/NNN-*.md` | Refuse. The `NNN` numbering is owned by `/monke-design:adr` — writing directly causes collisions when multiple skills emit ADRs in the same wave. Dispatch to `/monke-design:adr` with the body from Phase 4.1 and let it assign the number. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts (written on context pressure):**
+- `monke-docs/decisions/.experiment-drafts/<component>-<slug>.md` — draft ADR body assembled in Phase 4.1, before dispatch to `/monke-design:adr`.
+- Per-contender results ledger noting which contenders have completed their runs.
+
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `seer:experiment — <component> (<N>/<M> contenders run, phase <N>)` while mid-flight.
+
+**Recovery detection (on entry):**
+- If `monke-status.md` Resume block names `/monke-seer:experiment` AND draft ADR exists in `.experiment-drafts/` → resume at Phase 3 or 4 as the draft indicates.
+- If draft exists but marker cleared → check if an ADR was already written for this slug; if yes, clean up the draft and exit; if no, re-present Phase 4 gate.
+- If neither present → start fresh from Phase 1.
+
+---
+
+## Status Update
+
+**Read on entry:** `monke-status.md` — confirm the target component has a profiled data source (Phase 0 prerequisite) and note which contenders have been run by prior invocations.
+
+**Write on exit:**
+- **Success:** bump `Updated:` with today's date + `by /monke-seer:experiment`. Note the assigned ADR path (returned by `/monke-design:adr`) in Gate Audit Log: `- PG-5 EXPERIMENT <component>-<slug> — accepted (ADR-NNN)`. If the winner has a versioned artifact, suggest `/monke-seer:registry` as next step.
+- **Blocked:** if contenders couldn't be run (infrastructure, data access, budget), add a row to Open Blockers with WHAT/WHY/HOW.
+- **Partial:** write a `Resume:` block naming the phase + which contenders are complete for context-death recovery.

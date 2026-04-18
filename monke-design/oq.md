@@ -1,6 +1,8 @@
-# WyrdMonke Design:OQ — Open Question Management
+# WyrdMonke Design:OQ — The Parking Lot of Doubt
 
-> **Usage:** Copy `monke-design/` to `~/.claude/commands/monke-design/`. Invoke: `/monke-design:oq [action] [id]`
+> **Usage:** `/monke-design:oq [action] [id]`
+>
+> Parks every unresolved design / implementation / testing question in one place with a clear block-on label, so nothing silently slips past a gate while pretending it was decided.
 
 ---
 
@@ -34,8 +36,31 @@ If it doesn't → create it with header only:
 # Open Questions
 
 > Parking lot for unresolved design, implementation, and testing questions.
-> Format per design-specs.md S8.
+> Format per the OQ Rules inlined in this skill.
 ```
+
+---
+
+## Inlined OQ Rules (from design-specs S8)
+
+Spec file `monke-docs/design-specs.md` remains source of truth — do not re-load at runtime.
+
+### Format
+
+```
+### OQ-NNN: Question
+Discovered-during: design | implementation | testing
+Affects: HLD S-X.Y  |  Blocks: LLD for <component> | implementation of <component> | testing of <boundary>
+Options so far: ...
+Status: open | resolved -> ADR-NNN
+```
+
+### Rules
+
+- Every OQ tags what it blocks (LLD, implementation, or test).
+- Blocking OQs MUST be resolved before the blocked work proceeds.
+- Resolution → ADR + doc update (HLD, LLD, or both as appropriate).
+- Auto-number by scanning existing entries. Append to `monke-docs/open-questions.md`.
 
 ---
 
@@ -78,7 +103,9 @@ If it doesn't → create it with header only:
    - Show the question + options so far
    - Suggest: "Resolve this now? If yes, we'll create an ADR. If not, what additional info is needed?"
 
-**⏸ Present triage results. Ask user to confirm priorities and resolve any P0 blockers.**
+⏸ **SKILL-GATE:triage [SOFT] — Triage results confirmed.** Present triage results. Ask user to confirm priorities and resolve any P0 blockers.
+Auto-pass when: 0 P0 blockers detected AND at least one OQ exists (empty triage is skipped silently).
+Rigor: surfaces under `thorough` regardless; auto-confirms under `light`/`standard` when condition holds.
 
 ---
 
@@ -114,29 +141,42 @@ Resolve a specific open question.
    - If `Blocks: implementation of <component>` → that implementation is unblocked
    - If `Blocks: testing of <boundary>` → that test is unblocked
 
-**⏸ Present the resolution + any downstream impacts. Confirm?**
+⏸ **PG-14 [TRIGGERED] — Open question resolution (HLD/LLD amendment).** Present the resolution + any downstream impacts. Confirm / Adjust / Reject?
+Fires when resolving an OQ updates the HLD boundary matrix, an LLD contract, or an ADR. Ignores rigor. See design-specs §9.4 PG-14 boundary-change sub-case. OQ resolution cascades into HLD / LLD / implementation state — the human must confirm which blocked work becomes unblocked and whether an ADR is needed.
 
 ---
 
 ## Creating New OQs
 
-Any skill can create OQs inline. The format from `design-specs.md` S8:
+Any skill can create OQs inline using the format in the inlined OQ Rules above.
 
-```markdown
-### OQ-NNN: Question
-Discovered-during: design | implementation | testing
-Affects: HLD S-X.Y  |  Blocks: LLD for <component> | implementation of <component> | testing of <boundary>
-Options so far: ...
-Status: open
-```
+---
 
-Auto-number by scanning existing entries. Append to `monke-docs/open-questions.md`.
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Resolve an OQ by deleting the entry | Refuse. Set `Status: resolved -> ADR-NNN` (or `resolved — <reason>`) so the resolution trail survives. |
+| File a vague question as an OQ ("how should we do auth?") | Refuse. Every OQ names what it blocks (`Blocks: LLD for <component>` / implementation / testing) — no blocker, no OQ. |
+| Create an OQ without picking a `Discovered-during:` phase | Refuse. Design / implementation / testing classification drives triage grouping. |
+| Skip ADR when 2+ viable options were considered | Refuse. 2+ viable options = ADR. Single obvious resolution = status update only. |
+| Auto-triage resolve every P2 because "there's no blocker" | Refuse. P2 is parked, not resolved — status stays `open` until someone names the resolution. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** in-progress edits to `monke-docs/open-questions.md` (status changes, new entries). If `resolve` action triggered an inline ADR via `/monke-design:adr` logic, that ADR's draft file.
+**Status line marker:** `Where We Are:` reads `design:oq — <action> on <ID or scope>` while mid-flight.
+**Recovery detection:** On re-entry, if `open-questions.md` has OQ entries with `Status: open` that were partially updated in the last session (draft edit timestamps) → re-read the file, re-triage, continue. If an inline ADR draft exists but no status flip happened → resume at the Phase 3 resolution write. If no partial state → start clean from the requested action.
 
 ---
 
 ## Status Update
 
-On completion, update `monke-status.md`:
-- **list/triage:** no status change (read-only)
-- **resolve:** remove resolved OQ from Open Blockers table (if it was there). If the resolution unblocks a component, update that component's status in the relevant table.
-- Bump `Updated:` line
+**Read on entry:** `monke-status.md` — load Open Blockers table to cross-check with `open-questions.md` entries before triage.
+**Write on exit:**
+- Success (`list`/`triage`): no status change (read-only) but bump `Updated:` line if any priorities were changed.
+- Success (`resolve`): remove resolved OQ from Open Blockers table (if it was there); if resolution unblocks a component, update that component's status in the relevant table; bump `Updated:` line.
+- Blocked: if user rejects resolution at PG-14 → keep OQ `open`, add to Open Blockers if not already there with the reason.
+- Partial: if `triage` surfaced P0 blockers but user paused before resolving them → write `Resume:` block naming the P0 list and next action.

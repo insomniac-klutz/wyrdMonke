@@ -1,4 +1,4 @@
-# WyrdMonke Sync — Update Skills & Specs Without Touching Your Work
+# WyrdMonke Sync — The Clean Graft
 
 > **Usage:** Copy this file to `~/.claude/commands/monke-sync.md` (global). Then run `/monke-sync [branch]` inside a project already bootstrapped by `/monke-init`.
 
@@ -19,7 +19,13 @@ BRANCH="${ARGUMENTS:-trunk}"
 
 ## Prerequisites
 
-**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+**Agent Teams Gate — EXEMPT.** Sync is the skill that REPAIRS `CLAUDE.md`'s Agent Teams section when it drifts or goes missing. Requiring Agent Teams as a prereq would make the fix uninvokable (bootstrap paradox — same reasoning as `/monke-init`). Fallback check: after clone, verify `$TMPDIR/monke-CLAUDE.md` exists and contains `## Agent Teams`. If that file is missing from the upstream clone, fail with:
+
+```
+WHAT: Sync aborted. Upstream `monke-CLAUDE.md` missing the `## Agent Teams` section.
+WHY:  Sync repairs the project's Agent Teams config from upstream. If upstream is broken, syncing would corrupt local state.
+HOW:  Report the issue at the WyrdMonke repo. Do not rerun /monke-sync until upstream is fixed.
+```
 
 - Project already bootstrapped (`monke-docs/` exists, `CLAUDE.md` exists)
 - `git` available on PATH
@@ -53,7 +59,8 @@ git clone --depth 1 --branch "$BRANCH" https://github.com/insomniac-klutz/wyrdMo
 
 If clone fails → check branch name, network. Stop.
 
-**⏸ Decision gate** — present clone result (branch, commit SHA):
+**⏸ SKILL-GATE:clone-verify [SOFT] — clone result (branch, commit SHA).**
+Auto-pass when: branch matches argument exactly AND clone completed without warnings AND `$TMPDIR/monke-CLAUDE.md` passes the Agent Teams fallback check. On auto-pass, append `[gate:sync-clone] auto-confirmed (branch=<branch>, sha=<short>)` to Gate Audit Log.
 
 Confirm / Adjust / Reject?
 
@@ -79,12 +86,14 @@ SKILL_DIRS=$(find "$TMPDIR" -maxdepth 1 -type d -name 'monke-*' \
 Auto-discover root-level skill files (only files with `> **Usage:**` — excludes reference docs like drafter, phil, log, fut):
 
 ```bash
-# Root-level monke-*.md that are actual slash commands, not reference docs
-# Exclude monke-CLAUDE.md (handled in Phase 3) and user project files (NEVER overwrite)
+# Root-level monke-*.md that are slash commands OR referenced meta-docs (e.g. drafter).
+# Match either a "> **Usage:**" line (real slash commands) OR a "> *" italic tagline
+# blockquote (meta-docs like monke-drafter.md that CLAUDE.md links to).
+# Exclude monke-CLAUDE.md (handled in Phase 3) and user project files (NEVER overwrite).
 ROOT_CMDS=$(find "$TMPDIR" -maxdepth 1 -name 'monke-*.md' \
   ! -name 'monke-CLAUDE.md' \
   ! -name 'monke-status.md' \
-  -exec sh -c 'grep -q "^> \*\*Usage:\*\*" "$1" && basename "$1"' _ {} \;)
+  -exec sh -c 'grep -qE "^> (\*\*Usage:\*\*|\*)" "$1" && basename "$1"' _ {} \;)
 ```
 
 For each discovered skill directory and root command, overwrite in `.claude/commands/`:
@@ -111,7 +120,8 @@ Merge `$TMPDIR/monke-claude-settings.json` into `.claude/settings.json`:
 - If it exists → deep-merge: inject all keys from upstream without clobbering existing user settings
 - Show which keys will be added or already present
 
-**⏸ Decision gate** — show update plan (list discovered skill directories, root commands, settings changes, and files that will be overwritten):
+**⏸ SKILL-GATE:update-plan [SOFT] — skill & command update plan.**
+Auto-pass when: rigor=`light` AND every file in the plan is an overwrite of an existing upstream-managed file (no new files, no settings deletions, no protected-path touches). On auto-pass, append `[gate:sync-skills] auto-confirmed (<N> dirs, <M> files, rigor=light)` to Gate Audit Log. Any new file OR any settings change OR rigor=`standard`/`thorough` → surface.
 
 Confirm / Adjust / Reject?
 
@@ -163,7 +173,8 @@ For each discovered spec file:
 3. If local file doesn't exist → flag as new upstream spec, offer to copy
 4. If different → show a summary of what changed (sections added, removed, or modified)
 
-**⏸ Decision gate** — for each changed spec, present diff summary:
+**⏸ SKILL-GATE:spec-diff [SOFT] — spec diff per changed file.**
+Auto-pass when: rigor=`light` AND the change is purely additive (upstream added sections, none removed, none modified in place) AND the spec is not one of the protected files. On auto-pass, append `[gate:sync-spec-<file>] auto-confirmed (additive-only, rigor=light)` to Gate Audit Log. Any in-place modification, removal, or rigor=`standard`/`thorough` → surface.
 
 ```
 <file> has upstream changes:
@@ -203,7 +214,8 @@ When the template structure changes, the user's `monke-status.md` at the project
    - If a section was removed from the template, keep it in the user's file but flag it: `<!-- deprecated by upstream template change -->`
    - If columns were renamed, map old column data to new column names where the intent is obvious; flag ambiguous renames for user review
 
-**⏸ Decision gate** — present reconciliation plan:
+**⏸ SKILL-GATE:status-reconcile [SOFT] — monke-status.md reconciliation plan.**
+Auto-pass when: rigor=`light` AND reconciliation is purely additive (only new sections/columns added, no renames, no deprecations, no ambiguous mappings). On auto-pass, append `[gate:sync-status-reconcile] auto-confirmed (additive-only, rigor=light)` to Gate Audit Log. Any rename, deprecation, ambiguous mapping, or rigor=`standard`/`thorough` → surface.
 
 ```
 monke-status.md reconciliation (status-template.md changed):
@@ -234,7 +246,8 @@ Merge upstream `monke-CLAUDE.md` INTO the existing local `CLAUDE.md` — never r
    - **Preserve ALL user-added content** — custom sections, rules, project notes, filled `<<<placeholders>>>`, anything not from the WyrdMonke template stays untouched
    - Show what will be added/updated vs what will be preserved
 
-**⏸ Decision gate** — present merge plan:
+**⏸ SKILL-GATE:claudemd-merge [SOFT] — CLAUDE.md merge plan.**
+Auto-pass when: rigor=`light` AND merge adds only new WyrdMonke-managed sections (no edits to existing sections, no removals, no touch to user-added sections or filled placeholders). On auto-pass, append `[gate:sync-claude-md] auto-confirmed (additive-only, rigor=light)` to Gate Audit Log. Any in-place edit to a managed section, any change near user content, or rigor=`standard`/`thorough` → surface.
 
 ```
 CLAUDE.md merge from monke-CLAUDE.md:
@@ -253,7 +266,8 @@ Confirm / Adjust / Reject?
 
 ## Phase 4: Cleanup
 
-**⏸ Decision gate** — confirm ready to clean up:
+**⏸ SKILL-GATE:cleanup [SOFT] — cleanup of `$TMPDIR`.**
+Auto-pass when: rigor=`light` OR (rigor=`standard` AND no phase was rejected AND no gates surfaced errors). On auto-pass, append `[gate:sync-cleanup] auto-confirmed (rigor=<level>, no errors)` to Gate Audit Log. Any prior phase rejection, any gate error, or rigor=`thorough` → surface.
 
 Confirm / Adjust / Reject?
 
@@ -311,3 +325,45 @@ Check `.gitignore` — verify `CLAUDE.md` and `.claude/` are listed. If either i
 > CLAUDE.md
 > .claude/
 > ```
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Skip the Agent Teams fallback check on a sketchy clone (e.g. empty branch, wrong repo) | Refuse. Sync repairs Agent Teams from upstream; if upstream is broken, syncing corrupts local state. Stop with the WHAT/WHY/HOW error from Prerequisites. |
+| Overwrite a protected file (`hld.md`, `lld/*`, `open-questions.md`, `project-specs.md`, `monke-status.md`, `decisions/`, `checkpoints/`, `rage-run*/`) because "upstream changed it" | Refuse. Protected files are user state. The `Protected artifacts` table in "What Gets Touched" is the boundary — if upstream tries to write one, abort sync and report the violation. |
+| Replace `CLAUDE.md` wholesale instead of merging upstream-managed sections | Refuse. Users put custom rules, project notes, and filled `<<<placeholders>>>` in `CLAUDE.md`. Phase 3 merges section-by-section — that's the whole point. Replace ≠ merge. |
+| Replace `monke-status.md` when `status-template.md` changed | Refuse. Reconcile, never replace. Phase 3's reconciliation subsection merges structure and preserves every user data row. A replace deletes component progress. |
+| Clobber `.claude/settings.json` when upstream has a newer `monke-claude-settings.json` | Refuse. Deep-merge: inject upstream keys, preserve user overrides. A replace deletes user-added hook rules, permissions, and project-local tweaks. |
+| Continue after a protected-file violation ("just this once") | Refuse. Violation = abort. Report the file, restore from git, let the user decide. A sync that touches user state is a sync that corrupts user state — there is no middle ground. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts (written on context pressure):**
+- `$TMPDIR` — leftover clone proves sync died after Phase 1 clone but before Phase 4 cleanup. On re-entry, reuse the existing clone if branch + SHA match the requested branch; otherwise delete and re-clone.
+- `.claude/commands/monke-*/` — partial copies (some dirs overwritten, some not) prove Phase 2 skill-update loop died mid-copy. Safe to re-run: `cp -r` is idempotent.
+- `CLAUDE.md.preview.md` or equivalent merge-staging artifact — if present, Phase 3 CLAUDE.md merge died while staging but before commit. Discard the staging file, re-run merge from clean.
+- `monke-status.md.preview.md` — same pattern for status reconciliation.
+
+**Status line format (written to `monke-status.md`):**
+
+    ## Resume
+    Skill: /monke-sync
+    Phase: <1 | 2 | 3 | 4 | 5>
+    Last step: <specific step completed — e.g. "Phase 2 skill copy 4/7 dirs done">
+    Last gate: <gate ID — outcome — e.g. "sync-skills auto-confirmed">
+    Next action: <exactly what `/monke-sync` should do on next invocation>
+    Branch: <branch being synced>
+    TMPDIR: <path, if still valid>
+    Died at: <YYYY-MM-DD HH:MM UTC>
+
+**Recovery detection (on entry):**
+- If `monke-status.md` Resume block names `/monke-sync` AND `Next action` is unfinished → skip Phase 1 (reuse TMPDIR if valid), jump to the named next action.
+- If `$TMPDIR` exists AND Resume block is missing → prior sync died before status was updated. Validate the clone (branch, SHA, Agent Teams fallback). If valid, pick up at Phase 2. If invalid, delete and re-clone.
+- If preview/staging files exist in protected paths → prior merge died. Discard staging, re-run the owning phase from clean.
+- If neither present → standard Phase 1 clone.
+- After successful recovery → clear the Resume block, bump `Updated:` line, proceed normally.

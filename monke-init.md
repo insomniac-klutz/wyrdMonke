@@ -1,4 +1,4 @@
-# WyrdMonke Init — Install Skills, Scaffold Project, Merge CLAUDE.md
+# WyrdMonke Init — The One Ring
 
 > **Usage:** Copy this single file to `~/.claude/commands/monke-init.md` (global). Then run `/monke-init [branch]` inside your target project. Skills install project-local at `.claude/commands/`.
 
@@ -19,7 +19,9 @@ BRANCH="${ARGUMENTS:-trunk}"
 
 ## Prerequisites
 
-**Agent Teams Gate:** Read `CLAUDE.md`. If the Agent Teams section is missing → **stop**. Tell the user: "Agent teams not configured. Run `/monke-sync` or copy the Agent Teams section from `monke-CLAUDE.md` into your `CLAUDE.md`." Do not proceed.
+**Agent Teams Gate — EXEMPT.** Init is the skill that CREATES `CLAUDE.md`, so it cannot require `CLAUDE.md`'s Agent Teams section as a prereq (bootstrap paradox). Fallback check: after clone, verify `$TMPDIR/monke-CLAUDE.md` exists and contains the `## Agent Teams` header. If that file is missing from the upstream clone, fail with:
+
+> "Upstream clone missing `monke-CLAUDE.md` — cannot bootstrap agent teams. Check branch name and repo integrity."
 
 - `git` available on PATH
 - Internet access (clones from GitHub)
@@ -27,28 +29,22 @@ BRANCH="${ARGUMENTS:-trunk}"
 
 ---
 
-## Phase 1: Clone WyrdMonke
+## Phase 1: Clone & Install (no gate)
+
+Clone upstream and install skills + templates mechanically. No human gate — this phase is pure plumbing.
 
 ```bash
 TMPDIR=$(mktemp -d)
 git clone --depth 1 --branch "$BRANCH" https://github.com/insomniac-klutz/wyrdMonke.git "$TMPDIR"
 ```
 
-If clone fails → check branch name, network. Stop.
+If clone fails → check branch name, network. Stop with error.
 
-**⏸ Decision gate** — present clone result (branch, commit SHA, contents overview):
+**Agent Teams fallback check:** verify `$TMPDIR/monke-CLAUDE.md` exists and contains `## Agent Teams`. If not → stop with the error above.
 
-Confirm / Adjust / Reject?
+### Install skills
 
-- **Confirm** → proceed to skill install
-- **Adjust** → re-clone from a different branch
-- **Reject** → abort init, clean up temp dir
-
----
-
-## Phase 2: Install Skills
-
-Auto-discover skill directories from the upstream clone:
+Auto-discover skill directories and root command files from the upstream clone:
 
 ```bash
 # Find all monke-* dirs that contain at least one .md file
@@ -57,144 +53,167 @@ SKILL_DIRS=$(find "$TMPDIR" -maxdepth 1 -type d -name 'monke-*' \
   ! -name 'monke-docs' \
   ! -name 'monke-owns' \
   -exec sh -c 'ls "$1"/*.md >/dev/null 2>&1 && basename "$1"' _ {} \;)
-```
 
-Auto-discover root-level skill files (only files with `> **Usage:**` — excludes reference docs like drafter, phil, log, fut):
-
-```bash
-# Root-level monke-*.md that are actual slash commands, not reference docs
-# Exclude monke-CLAUDE.md (handled in Phase 4)
+# Root-level monke-*.md that are slash commands OR referenced meta-docs (e.g. drafter).
+# Match either a "> **Usage:**" line (real slash commands) OR a "> *" italic tagline
+# blockquote (meta-docs like monke-drafter.md that skills link to).
+# Exclude monke-CLAUDE.md (handled in Phase 3) and monke-mermaid.mmd (scaffolded separately).
 ROOT_CMDS=$(find "$TMPDIR" -maxdepth 1 -name 'monke-*.md' ! -name 'monke-CLAUDE.md' \
-  -exec sh -c 'grep -q "^> \*\*Usage:\*\*" "$1" && basename "$1"' _ {} \;)
-```
+  -exec sh -c 'grep -qE "^> (\*\*Usage:\*\*|\*)" "$1" && basename "$1"' _ {} \;)
 
-Install discovered skills and root commands project-local at `.claude/commands/`:
-
-```bash
 mkdir -p .claude/commands
 for DIR in $SKILL_DIRS; do
   cp -r "$TMPDIR/$DIR/" .claude/commands/$DIR/
 done
-
-# Root commands
 for FILE in $ROOT_CMDS; do
   cp "$TMPDIR/$FILE" .claude/commands/$FILE
 done
 ```
 
-**⏸ Decision gate** — show install plan (list discovered skill directories and root commands, note if existing files will be overwritten):
+### Scaffold project files
 
-Confirm / Adjust / Reject?
-
-- **Confirm** → install all discovered skills and root commands to `.claude/commands/`
-- **Adjust** → change which items to install
-- **Reject** → skip install, proceed to Phase 3
-
-After copying, verify everything landed:
 ```bash
-for DIR in $SKILL_DIRS; do
-  ls .claude/commands/$DIR/*.md
-done
-for FILE in $ROOT_CMDS; do
-  ls .claude/commands/$FILE
-done
+cp -r "$TMPDIR/monke-docs/" ./monke-docs/
+cp "$TMPDIR/monke-mermaid.mmd" ./monke-mermaid.mmd
+cp "$TMPDIR/monke-docs/status-template.md" ./monke-status.md
+
+# Merge settings (inject keys without clobbering)
+if [ -f .claude/settings.json ]; then
+  # deep-merge — inject upstream keys, preserve user overrides
+  # (implementation: use jq or manual merge)
+  :
+else
+  cp "$TMPDIR/monke-claude-settings.json" .claude/settings.json
+fi
 ```
 
-Report: skill directory count, root command count, and total file count.
+### Merge CLAUDE.md
+
+- If `CLAUDE.md` exists → back up as `CLAUDE.md.bak`, merge upstream as skeleton, integrate existing content (gotchas, project description, custom rules).
+- If `CLAUDE.md` does not exist → copy `$TMPDIR/monke-CLAUDE.md` to `./CLAUDE.md`.
+
+Warn if settings were merged: "`.claude/settings.json` updated — restart Claude Code (`/exit`) for changes to take effect."
 
 ---
 
-## Phase 3: Scaffold Project
+## Phase 2: Auto-detect Stack (no gate)
 
-Copy project template files into the current working directory:
+Scan the current project directory for stack signals. No human gate — auto-detection is mechanical.
 
-1. `$TMPDIR/monke-docs/` → `./monke-docs/` (includes `monke-readsme.md` — the repo origin reference)
-2. `$TMPDIR/monke-mermaid.mmd` → `./monke-mermaid.mmd`
-3. `$TMPDIR/monke-docs/status-template.md` → `./monke-status.md` (rename on copy)
-4. `$TMPDIR/monke-claude-settings.json` → `.claude/settings.json` (merge)
-   - If `.claude/settings.json` does not exist → copy directly
-   - If it exists → deep-merge: inject all keys from upstream without clobbering existing user settings
-   - After merge, warn user: "`.claude/settings.json` updated — restart Claude Code (`/exit`) for changes to take effect."
+| Signal | Detects |
+|--------|---------|
+| `package.json` / `pnpm-lock.yaml` / `yarn.lock` | JS/TS, package manager, scripts |
+| `pyproject.toml` / `requirements.txt` / `poetry.lock` | Python, package manager, test runner |
+| `Cargo.toml` / `Cargo.lock` | Rust |
+| `go.mod` / `go.sum` | Go |
+| `pom.xml` / `build.gradle` | Java |
+| `Gemfile` | Ruby |
+| `*.csproj` / `*.sln` | C# |
+| `Dockerfile` / `docker-compose.yml` | containers |
+| `.github/workflows/*.yml` | CI commands (extract for IL gate bindings) |
+| `openapi.yaml` / `swagger.json` | existing API contracts |
+| `docs/` directory with markdown | existing docs (consume as input) |
 
-**⏸ Decision gate** — show scaffold plan (note if existing files will be overwritten):
+Record detected stack into `monke-docs/project-specs.md` Stack section (auto-populate placeholders where confident, leave `<<<...>>>` where ambiguous).
 
-Confirm / Adjust / Reject?
-
-- **Confirm** → copy project templates
-- **Adjust** → change which files to scaffold
-- **Reject** → skip scaffolding, proceed to Phase 4
-
----
-
-## Phase 4: CLAUDE.md Merge
-
-Copy `$TMPDIR/monke-CLAUDE.md` into the current project root.
-
-### If `CLAUDE.md` already exists:
-
-1. Read both existing `CLAUDE.md` and `monke-CLAUDE.md`.
-2. Highlight what's in existing that's NOT in monke, and vice versa.
-
-**⏸ Decision gate** — present diff summary:
-
-Confirm / Adjust / Reject?
-
-- **Confirm** → merge using monke-CLAUDE.md as skeleton, integrate existing content. Back up original as `CLAUDE.md.bak`
-- **Adjust** → modify merge strategy (e.g., keep existing as skeleton instead)
-- **Reject** → keep both files separate, user merges manually later
-
-### If `CLAUDE.md` does not exist:
-
-1. Rename `monke-CLAUDE.md` → `CLAUDE.md`.
-
-**⏸ Decision gate** — present new CLAUDE.md:
-
-Confirm / Adjust / Reject?
-
-- **Confirm** → accept the new CLAUDE.md
-- **Adjust** → edit CLAUDE.md before proceeding
-- **Reject** → remove CLAUDE.md, skip this phase
+**Existing code detected?** Note it — Phase 4 will trigger fast onboarding.
 
 ---
 
-## Phase 5: Cleanup
+## Phase 3: Set Rigor (SINGLE HUMAN GATE)
 
-**⏸ Decision gate** — confirm ready to clean up:
+⏸ **PG-INIT [HARD] — Rigor selection for this project.**
+<!-- Bootstrap-tier gate: not in S9.4's numbered schedule. HARD because the project's entire gate behavior downstream depends on this answer; auto-passing would force a default rigor the user never agreed to. Never auto-passes. Never skippable. -->
 
-Confirm / Adjust / Reject?
+This is the **only** human gate in init. One question, three answers.
 
-- **Confirm** → delete temp dir, proceed to verify
-- **Adjust** → inspect temp dir contents first, then re-ask
-- **Reject** → keep temp dir for manual inspection, proceed to verify
+Present to user:
 
-```bash
-rm -rf "$TMPDIR"
+> **Rigor level for this project?**
+>
+> - `light` — ~2 human gates total (scope + ship). Use for MVPs, small tools, personal projects.
+> - `standard` — ~4-5 gates (scope + components + tradeoffs + LLD + ship). Use for medium projects, team work.
+> - `thorough` — ~8+ gates (all SOFT gates surface). Use for large, critical, or regulated projects.
+>
+> Default: `standard`.
+
+Write the answer to `.monke-config.md` at project root:
+
+```markdown
+# Monke Config
+
+rigor: standard
+set_by: /monke-init
+set_on: <YYYY-MM-DD>
 ```
 
 ---
 
-## Phase 6: Verify & Next Steps
+## Phase 4: Finalize (no gate)
 
-1. Verify files landed:
+Mechanical cleanup + routing.
+
+1. Delete `$TMPDIR`.
+2. Verify files landed:
    ```bash
-   ls monke-docs/ CLAUDE.md monke-mermaid.mmd monke-status.md .claude/settings.json
-   for DIR in $SKILL_DIRS; do
-     ls .claude/commands/$DIR/*.md
-   done
-   for FILE in $ROOT_CMDS; do
-     ls .claude/commands/$FILE
-   done
+   ls monke-docs/ CLAUDE.md monke-mermaid.mmd monke-status.md .claude/settings.json .monke-config.md
    ```
+3. **If existing code was detected in Phase 2 → trigger fast onboarding automatically.** Invoke `/monke` (the unified orchestrator) — it will run the fast onboarding scan and route to the first component needing work. No separate "run tinker then fill then survey" dance.
+4. **If greenfield (no code detected) →** tell the user:
+   > "Init complete. Rigor: `<level>`. Run `/monke` to begin — it will ask whether this is a flash MVP or production build."
 
-2. Show summary:
-   - Skills installed: list each discovered directory + file counts
-   - Root commands installed: list each root command file
-   - Project files scaffolded: list what was copied
-   - CLAUDE.md status: new / merged / separate
-   - Settings: new / merged (list injected keys)
-   - Branch used: `$BRANCH`
+Report:
+- Skills installed: count + list
+- Project files scaffolded: count + list
+- CLAUDE.md status: new / merged
+- Settings status: new / merged
+- Rigor level: `<level>`
+- Next step: auto-triggered fast onboarding, or `/monke` invocation
 
-3. Tell the user:
-   - "Skills installed. You now have N slash commands available across M skill directories."
-   - "Run `/monke-design:tinker` to detect your stack and fill in the project template."
-   - "Or if you have existing code: `/monke-recon:survey` then `/monke-recon:reconstruct` to reverse-engineer an HLD."
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Skip the Agent Teams fallback check (accept an upstream clone without `monke-CLAUDE.md` or without `## Agent Teams`) | Refuse. Init is the skill that seeds agent teams into the project; if the upstream seed is broken, installing it corrupts every future skill invocation. Stop with the WHAT/WHY/HOW error from Prerequisites. |
+| Overwrite an existing `CLAUDE.md` without first writing `CLAUDE.md.bak` | Refuse. Users put project secrets, gotchas, and custom rules in `CLAUDE.md`. Silent overwrite deletes work. Always back up, then merge — never replace. |
+| Skip Phase 3 rigor prompt and write a default `standard` silently | Refuse. PG-INIT is HARD. Every downstream gate behavior (SOFT surfaces, auto-pass thresholds) reads from `.monke-config.md`. A default the user never confirmed corrupts the entire session's gate math. |
+| Re-run `/monke-init` on a project that already has `monke-status.md` + populated `monke-docs/` | Refuse. Init is a one-shot bootstrap. Re-running clobbers skills but can't safely reinitialize status. Suggest `/monke-sync` to pull upstream skill updates without touching user state. |
+| Copy upstream skill files while leaving `monke-drafter.md` behind (because the `> **Usage:**` filter rejected it) | Refuse. Target-project `CLAUDE.md` references `monke-drafter.md` as the skill-authoring law. A project missing the drafter is a project where every `/monke-sync`-era skill update silently violates rules nobody can read. Use the relaxed ROOT_CMDS filter that includes `> *` meta-docs. |
+| Proceed past a failed clone (branch not found, network error) by defaulting to `trunk` | Refuse. The user asked for a specific branch for a reason (feature preview, pinned release). Stop with the error. Let the user pick. |
+
+---
+
+## Context Death Protocol
+
+**Status Update exemption:** Init CREATES `monke-status.md` — there is no status file to read on entry. Recovery therefore leans on filesystem artifacts, not a Resume block.
+
+**Checkpoint artifacts (written on context pressure):**
+- `CLAUDE.md.bak` — written BEFORE any CLAUDE.md merge begins; presence of a fresh `.bak` without a merged `CLAUDE.md` proves init died mid-merge.
+- `monke-docs/` (partial directory) — presence without `monke-status.md` or `.monke-config.md` proves scaffold phase died.
+- `$TMPDIR` leftover — if the clone temp dir survives (Phase 4 deletes it on success), init died before cleanup.
+- Partial skill copies under `.claude/commands/monke-*/` — presence of some but not all skill dirs proves Phase 1 copy loop died.
+
+**Status line format:** N/A for init — status file does not yet exist. Init writes its initial `Updated:` line at the end of Phase 4 when status is seeded, not before.
+
+**Recovery detection (on entry):**
+- If `CLAUDE.md.bak` exists AND `CLAUDE.md` is missing or contains upstream skeleton with unfilled placeholders → prior init died in the CLAUDE.md merge. Restore from `.bak`, tell the user, re-run init cleanly.
+- If `monke-docs/` exists BUT `monke-status.md` is missing AND `.monke-config.md` is missing → prior init died before Phase 3 rigor gate. Safe to re-run — Phase 1 copy is idempotent.
+- If `.claude/commands/monke-*/` exists partially (some skill dirs present, some missing) → prior init died in Phase 1. Safe to re-run — `cp -r` overwrites cleanly.
+- If `$TMPDIR` leftover detected (stale `/tmp/tmp.*` with `.git/` inside it) → report and clean up before re-running.
+- If none of the above → start clean from Phase 1.
+
+---
+
+## Status Update
+
+**Exemption:** Init is the skill that CREATES `monke-status.md`. It cannot read it on entry (it does not yet exist). On exit (success), init writes the initial status file from the template and stamps:
+
+```
+Updated: <YYYY-MM-DD> by /monke-init
+```
+
+On exit (failure before Phase 4): init does NOT write a partial `monke-status.md` — a partial status file would mislead future `/monke` invocations into skipping fast onboarding. Instead, init surfaces the error, leaves a clean filesystem (per Context Death Protocol recovery), and asks the user to re-run.
+
+On exit (failure after Phase 4 status seed): treat as Context Death — user state exists, recovery is forward-only via `/monke` or `/monke-sync`, never a re-run of init.

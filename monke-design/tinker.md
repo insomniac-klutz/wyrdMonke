@@ -1,4 +1,4 @@
-# WyrdMonke Design:Tinker — Fill Project Template
+# WyrdMonke Design:Tinker — The Project's First Breath
 
 > **Usage:** Run `/monke-design:tinker` inside a project scaffolded by `/monke-init`. It detects your stack, fills every placeholder, and gets your SDLC dashboard running.
 
@@ -23,6 +23,28 @@ Verify scaffolding exists (run `/monke-init` first if missing):
 - `monke-status.md` exists (the dashboard, not the skill)
 
 If any are missing → tell user: "Project not scaffolded. Run `/monke-init` first." Stop.
+
+---
+
+## Inlined Stack Rules (from design-specs S2)
+
+Spec file `monke-docs/design-specs.md` remains source of truth. Tinker uses these rules to know which choices must be locked:
+
+**Locked layers (must have a binding in `project-specs.md` S10.1):**
+
+| Layer | What to lock | Notes |
+|-------|-------------|-------|
+| Backend language | Primary language + version | Alternatives require ADR with measurable justification. Language selection is PG-6 (HARD). |
+| Frontend framework | UI framework + bundler (if applicable) | No alternatives without ADR. |
+| Database | Primary persistent store (if applicable) | Auxiliaries permitted with ADR. |
+| LLM interface | LLM client library (if applicable) | No direct provider SDKs without ADR. Async preferred. |
+| Testing | Mandatory — pick framework per language | No component ships without passing test gate. |
+
+**Flexible (decided via LATS + ADR):** API framework, ORM, state management, testing framework choice (not testing itself), build tools, CSS, deployment, migration tooling, agent orchestration approach.
+
+**Stack violation protocol:** if a locked tech cannot satisfy a requirement during later design → `⏸ PG-12 (TRIGGERED)` user decides, ADR status "exception". No silent swaps.
+
+Tinker records detected values into these layers. It does NOT enforce violations — that happens at HLD/LLD time.
 
 ---
 
@@ -65,7 +87,8 @@ If the flag is not set, tell the user to merge this into their `.claude/settings
 ```
 Then use `/exit` and resume the thread for it to take effect.
 
-**⏸ Wait for user response before proceeding.**
+⏸ **SKILL-GATE:agentteams-check [TRIGGERED] — Wait for user response before proceeding.**
+Fires only when the flag is not set. User accepts (restarts) or declines before detection continues.
 
 After user accepts (and restarts) or declines, re-check `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` in the environment — the `/exit` breaks context so you must verify the current state:
 
@@ -76,7 +99,9 @@ After user accepts (and restarts) or declines, re-check `CLAUDE_CODE_EXPERIMENTA
 
 Store agent teams status — later skills reference it.
 
-**⏸ Present detection summary to user.**
+⏸ **SKILL-GATE:detection-summary [SOFT] — Present detection summary to user.**
+Auto-pass when: all manifests parsed cleanly, language/framework detection unambiguous, no conflicting signals across detection sources.
+Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds.
 
 ---
 
@@ -90,7 +115,9 @@ Tell the user:
 
 Then follow the instructions in `/monke-implement:fill` inline (the user may not have that skill installed separately during initial bootstrap). Pass the detection summary from Phase 1 as context for suggesting values.
 
-**⏸ Confirm** all groups filled before proceeding.
+⏸ **SKILL-GATE:groups-filled [SOFT] — Confirm all groups filled before proceeding.**
+Auto-pass when: no `<<<` placeholders remain in `monke-docs/project-specs.md` AND every suggested value received user confirmation.
+Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds.
 
 ---
 
@@ -106,7 +133,8 @@ Then follow the instructions in `/monke-implement:fill` inline (the user may not
 - **Existing codebase:** Analyze for patterns — auth/middleware, state management, error handling, database access. Present as bullet list for confirmation.
 - **Fresh init:** Ask for known invariants, constraints, or gotchas. Suggest they can add more later.
 
-**⏸ Confirm** the filled `CLAUDE.md` with the user.
+⏸ **SKILL-GATE:claudemd-confirm [HARD] — Confirm the filled `CLAUDE.md` with the user.**
+Always surfaces. CLAUDE.md is durable project instruction — human must review description + invariants before they are committed to the file.
 
 ---
 
@@ -150,9 +178,30 @@ Then follow the instructions in `/monke-implement:fill` inline (the user may not
 
 ---
 
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Fill placeholders without detecting the project first | Refuse. Detection runs in Phase 1 — suggestions are grounded in manifests, not invented. |
+| Skip the Agent Teams flag check and proceed in solo mode silently | Refuse. Present the detection result; downstream skills branch on it. |
+| Commit `CLAUDE.md` or `.claude/` to the repo without a `.gitignore` warning | Refuse. Phase 4 step 5 is mandatory — these contain project-specific AI instructions. |
+| Re-run tinker on a project that already has a filled `project-specs.md` without asking | Refuse. Offer to run `/monke-implement:fill <group>` surgically for placeholder-only drift. |
+| Write project-specs values the user hasn't confirmed | Refuse. Every group pauses for confirmation — tinker is a guided walk, not an autofill. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** partial edits to `monke-docs/project-specs.md` (placeholder replacements) and `CLAUDE.md` (project description / invariants). `monke-status.md` Bootstrap section reflects per-group progress.
+**Status line marker:** `Where We Are:` reads `design:tinker — phase <N> (<detecting | filling groups | claude.md | finalize>)` while tinker is mid-flight.
+**Recovery detection:** On re-entry, if any `<<<placeholder>>>` remains in `project-specs.md` OR `CLAUDE.md` and status marker names tinker → resume at the phase that owns the first unfilled group. If all placeholders filled but "Where We Are" still reads tinker → skip to Phase 4 Finalize. If no placeholders and status advanced → tell user "Bootstrap already complete" and exit.
+
+---
+
 ## Status Update
 
-On completion, update `monke-status.md`:
-- Mark all Bootstrap checkboxes as `[x]`
-- Set `Updated:` to today's date, `by /monke-design:tinker`
-- Set "Where We Are" and "Next action" per Phase 4 step 3
+**Read on entry:** `monke-status.md` — check Bootstrap section state, existing `Where We Are` to detect mid-flight resume.
+**Write on exit:**
+- Success: mark all Bootstrap checkboxes `[x]`; bump `Updated:` with today's date and `by /monke-design:tinker`; set "Where We Are" and "Next action" per Phase 4 step 3.
+- Blocked: add row to Open Blockers table with WHAT (which group) / WHY (what's unclear) / HOW (which spec section or user input resolves).
+- Partial: write `Resume:` block naming the phase + last completed group so the next invocation picks up there.

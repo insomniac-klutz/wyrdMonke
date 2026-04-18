@@ -27,17 +27,27 @@ TeamCreate → TaskCreate (×N) → TaskUpdate (deps) → Agent w/ team_name (×
 
 1. **Explore**: `TeamCreate` → spawn 2–3 scout teammates → gather findings via `SendMessage`.
 2. **Clarify**: ask user targeted questions based on findings.
-3. **Plan**: enter plan mode. List each teammate (two-word cool and quircky codename , first word cool phrase , second word describing the task/responsibility ex phantom-parser, neon-extractor, vortex-mapper, cipher-scorer, blitz-linker), role, file ownership, dependency edges. Present for approval.
-4. **Execute**: `TeamCreate` → `TaskCreate` (×N) → wire `addBlockedBy` → spawn teammates → lead delegates only, does NOT write code → wait for all `TaskUpdate(completed)`.
+3. **Plan**: enter plan mode. List each teammate with a two-word codename:
+    - **Word 1**: an evocative, "cool" descriptor — drawn from the same *register* as examples like phantom, neon, vortex, cipher, blitz (think: cyber/noir/kinetic/arcane/elemental vibes). Do **not** reuse any word from the examples; generate fresh ones in the same spirit (e.g. specter, prism, riptide, glyph, shadow, pulse, ember, quantum, nomad, void).
+    - **Word 2**: a functional noun describing the teammate's task/responsibility (parser, extractor, mapper, scorer, linker, etc.).
+
+    Format: `codename-role` (e.g. specter-parser, prism-extractor).
+
+    **Constraints**:
+        - Every first word must be unique across the team.
+        - No first word may match the examples verbatim.
+        - Maintain the aesthetic — avoid bland descriptors (smart, fast, good).
+
+    Then list role, file ownership, dependency edges. Present for approval.
+4. **Execute**: `TeamCreate` → `TaskCreate` (×N) → wire `addBlockedBy` → spawn teammates → lead delegates original content creation → wait for all `TaskUpdate(completed)`.
 5. **Teardown**: `SendMessage(shutdown_request)` to each → `TeamDelete`.
 
 ### Rules
 
-- ALL work goes through agent teams. Single-file / <20-line exceptions require explicit user permission.
+- **Team sizing and archetype selection per [`monke-docs/design-specs.md`](monke-docs/design-specs.md) S3.1 (Team Decision Heuristic).** Default team size is 2. Use the heuristic — do not hardcode a team size.
 - Each teammate owns distinct files — no shared-file edits.
-- 3–5 teammates, 5–6 tasks each.
 - Embed full context into spawn prompts — teammates have no conversation history.
-- Lead coordinates only. If lead starts writing code, STOP and delegate.
+- **Lead coordinates and synthesizes.** Lead delegates original content creation. Lead may directly write: status updates, artifact assembly from teammate outputs, test plans, and changes under 20 lines that don't require review. If lead is drafting new feature code, architecture decisions, or substantive design content — STOP and delegate.
 - Use `planModeRequired: true` for risky teammates.
 
 ### Agent Teams Fail Gate
@@ -47,6 +57,16 @@ TeamCreate → TaskCreate (×N) → TaskUpdate (deps) → Agent w/ team_name (×
 - **Stop immediately.** Do not proceed with the skill.
 - Tell the user: "Agent teams are not configured. WyrdMonke skills require agent teams to operate. Run `/monke-sync` to pull the latest template, or copy the Agent Teams section from `monke-CLAUDE.md` into your project's `CLAUDE.md`."
 - This is a **hard gate** — no skill runs without it.
+
+**Exemptions (bootstrap paradox):** `/monke-init` and `/monke-sync` are exempt from this gate. They are the skills that CREATE or UPDATE `CLAUDE.md` itself, so requiring `CLAUDE.md`'s Agent Teams section as a prereq would be circular. They fall back to checking `monke-CLAUDE.md` in the upstream clone.
+
+---
+
+## Rigor & Progressive Formalization
+
+**Rigor level** (light / standard / thorough) for this project is in [`.monke-config.md`](.monke-config.md) (created by `/monke-init`). It determines which gates surface to the human and which auto-pass.
+
+**Progressive formalization:** documentation emerges from work, not precedes it. Existing components get reverse-engineered LLDs refined as gaps are filled; greenfield components get design-first LLDs. See [`monke-docs/sdlc-specs.md`](monke-docs/sdlc-specs.md) for the full model.
 
 ---
 

@@ -41,7 +41,8 @@ Sonar target acquired:
   Mode: drift | Scope: <description> | Files: <N> total
 ```
 
-**Confirm scope before scanning.**
+⏸ **PG-1 [HARD] — Scope confirmed before scanning.** Always surfaces. Never skippable. Drift findings can trigger spec amendments — scope frames which specs are in scope for comparison.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -81,7 +82,10 @@ Present findings grouped by severity (critical first). Finding IDs: `D-NNN`. Eac
 
 ## Phase 5: Save Rage Run
 
-Write to `monke-docs/rage-runs/<YYYY-MM-DD>-drift-<short-scope>.md`. Use template at `monke-docs/rage-run/template.md`. Create directory if needed. **Confirm filename.**
+Write to `monke-docs/rage-runs/<YYYY-MM-DD>-drift-<short-scope>.md`. Use template at `monke-docs/rage-run/template.md`. Create directory if needed.
+
+⏸ **PG-11 [SOFT] — Filename confirmed before write.** Auto-pass when: scope slug is unambiguous (single directory/component, not a glob) AND no existing rage-run collides with the slug for today. Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -89,7 +93,7 @@ Write to `monke-docs/rage-runs/<YYYY-MM-DD>-drift-<short-scope>.md`. Use templat
 
 "Update specs to match code OR update code to match specs — pick a direction for each finding. Run `/monke-status:status rebuild` to refresh the dashboard."
 
-Cross-mode: "Run `/monke-rage:orchestra` to scan with a different lens on the same scope."
+Cross-mode: "Run `/monke rage:<mode>` (buggy | improv | renounce | haunt | echo) to scan with a different lens on the same scope."
 
 ---
 
@@ -97,9 +101,35 @@ Cross-mode: "Run `/monke-rage:orchestra` to scan with a different lens on the sa
 
 | If asked to... | Do instead... |
 |----------------|--------------|
-| Scan without presenting findings | Refuse. Always pause for triage review. |
-| Auto-fix all without confirmation | Refuse. Monke presents, human decides. |
-| Suppress findings for a clean report | Refuse. Honesty over vanity. |
-| Skip files ("probably fine") | Refuse. Sampling is lying. |
-| Rate everything critical | Refuse. Severity must be honest. |
-| Ignore test files | Refuse. Broken tests are as bad as broken code. |
+| Propose rewrites without reading `git log` | Refuse. Drift findings need to ask "which side is newer — spec or code?" That's a git-log question. Cite the commit history before recommending direction. |
+| Auto-rewrite HLD to match code | Refuse. Drift is surfaced, not silently resolved. Present the divergence; let the user decide whether to update the spec, update the code, or both. That's `/monke-design:hld evolve` territory. |
+| Flag stylistic LLD deviations as `critical` | Refuse. Parameter-name drift and comment-count drift are `low`/`note`. `critical` means the contract lies about behavior, not that the docstring is stale. |
+| Compare code against a stale ADR without checking supersession | Refuse. An ADR marked `superseded by ADR-XXX` is no longer the authority. Follow the supersession chain to the live ADR before flagging drift. |
+| Mark HLD stubs with `<<<...>>>` placeholders as drift | Refuse. Placeholders are bootstrap state, not drift. `/monke-init` and `/monke-recon:reconstruct` own those. Skip them in the comparison. |
+| Report "test exists but not in test plan" as the same severity as "test plan row has no test" | Refuse. Untracked test is `low`/`note` (spec catch-up). Spec row with no test is `high`/`critical` (coverage lie). Rate them honestly. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts (written on context pressure):**
+- `monke-docs/rage-runs/<date>-drift-<scope>.draft.md` — partial divergence findings with per-spec/per-code comparison state.
+- Spec-vs-code comparison ledger listing which HLD sections / LLDs have been cross-referenced.
+
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `rage:drift — <scope> (<N>/<M> components compared, <K> divergences logged)` while mid-flight.
+
+**Recovery detection (on entry):**
+- If `monke-status.md` Resume block names `/monke-rage:drift` AND draft rage-run exists → resume at Phase 2 from last uncompared component.
+- If draft exists but marker cleared → verify scope matches, continue from Phase 3 triage.
+- If neither present → start fresh from Phase 1.
+
+---
+
+## Status Update
+
+**Read on entry:** `monke-status.md` — note current LLD confidence levels (auto-generated LLDs produce more drift by design) and any Resume blocks from prior drift runs.
+
+**Write on exit:**
+- **Success:** bump `Updated:` with today's date + `by /monke-rage:drift`. Append to Gate Audit Log: `- RAGE drift <scope> — <N critical / K high / ...> (see <path>)`. For drift findings requiring HLD/LLD amendments, note pending `/monke-design:hld evolve` or `/monke-design:lld` steps.
+- **Blocked:** if no HLD/LLD baseline exists, add a row to Open Blockers with WHAT/WHY/HOW pointing to `/monke-recon:reconstruct`.
+- **Partial:** write a `Resume:` block with phase + comparison ledger for context-death recovery.

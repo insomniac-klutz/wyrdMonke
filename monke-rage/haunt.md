@@ -36,7 +36,8 @@ Sonar target acquired:
   Mode: haunt | Scope: <description> | Files: <N> total
 ```
 
-**Confirm scope before scanning.**
+⏸ **PG-1 [HARD] — Scope confirmed before scanning.** Always surfaces. Never skippable. Security findings drive ship-blocking decisions — scope determines which attack surface is in scope.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -76,7 +77,10 @@ Present findings grouped by severity (critical first). Finding IDs: `H-NNN`. Eac
 
 ## Phase 5: Save Rage Run
 
-Write to `monke-docs/rage-runs/<YYYY-MM-DD>-haunt-<short-scope>.md`. Use template at `monke-docs/rage-run/template.md`. Create directory if needed. **Confirm filename.**
+Write to `monke-docs/rage-runs/<YYYY-MM-DD>-haunt-<short-scope>.md`. Use template at `monke-docs/rage-run/template.md`. Create directory if needed.
+
+⏸ **PG-11 [SOFT] — Filename confirmed before write.** Auto-pass when: scope slug is unambiguous (single directory/component, not a glob) AND no existing rage-run collides with the slug for today. Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds.
+Confirm / Adjust / Reject?
 
 ---
 
@@ -84,7 +88,7 @@ Write to `monke-docs/rage-runs/<YYYY-MM-DD>-haunt-<short-scope>.md`. Use templat
 
 "Critical security findings are ship-blockers. Consider `/monke-design:oq` for findings that need design changes."
 
-Cross-mode: "Run `/monke-rage:orchestra` to scan with a different lens on the same scope."
+Cross-mode: "Run `/monke rage:<mode>` (buggy | improv | renounce | drift | echo) to scan with a different lens on the same scope."
 
 ---
 
@@ -92,9 +96,35 @@ Cross-mode: "Run `/monke-rage:orchestra` to scan with a different lens on the sa
 
 | If asked to... | Do instead... |
 |----------------|--------------|
-| Scan without presenting findings | Refuse. Always pause for triage review. |
-| Auto-fix all without confirmation | Refuse. Monke presents, human decides. |
-| Suppress findings for a clean report | Refuse. Honesty over vanity. |
-| Skip files ("probably fine") | Refuse. Sampling is lying. |
-| Rate everything critical | Refuse. Severity must be honest. |
-| Ignore test files | Refuse. Broken tests are as bad as broken code. |
+| Flag every string concat as SQL injection | Refuse. Context matters — a concatenation over a trusted constant is not an injection. Trace the taint from the actual request surface; if no user-controlled input reaches it, downgrade the finding. |
+| Mark all missing auth as `critical` without checking context | Refuse. Health-check and public documentation endpoints legitimately skip auth. Check the route's intended exposure before scoring. |
+| Treat `.env.example` files as leaked secrets | Refuse. Placeholder/example files are convention, not a leak. Only flag actual secrets, `.env` without `.gitignore`, or hardcoded tokens in source. |
+| Assume CORS wildcard is always a vulnerability | Refuse. A wildcard on a public read-only API is intentional; on an authenticated endpoint it's a disaster. Classify by endpoint role, not by string match. |
+| Rate MD5 in a non-security context (checksum, cache key) as `critical` | Refuse. MD5 for integrity-only use is fine. Flag ONLY where MD5 is used for passwords, tokens, or security boundaries. |
+| Suppress findings because "it's legacy" or "already filed" | Refuse. The rage-run is the honest record. If a finding is accepted risk, say so explicitly with a citation, don't silently drop it. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts (written on context pressure):**
+- `monke-docs/rage-runs/<date>-haunt-<scope>.draft.md` — partial vulnerability findings with taint-trace state.
+- Per-file progress ledger noting scanned vs pending files.
+
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `rage:haunt — <scope> (<N>/<M> files scanned, <K> findings)` while mid-flight.
+
+**Recovery detection (on entry):**
+- If `monke-status.md` Resume block names `/monke-rage:haunt` AND draft rage-run exists → resume at Phase 2 from last unscanned file.
+- If draft exists but marker cleared → verify scope matches, continue from Phase 3 triage.
+- If neither present → start fresh from Phase 1.
+
+---
+
+## Status Update
+
+**Read on entry:** `monke-status.md` — check current phase and whether the project is pre-ship (critical findings block ship) or post-ship (findings still matter but don't block existing traffic).
+
+**Write on exit:**
+- **Success:** bump `Updated:` with today's date + `by /monke-rage:haunt`. Append to Gate Audit Log: `- RAGE haunt <scope> — <N critical / K high / ...> (see <path>)`. All `critical` findings must be added to Open Blockers (ship-blocker class).
+- **Blocked:** if scope failed or prerequisites missing, add a row to Open Blockers with WHAT/WHY/HOW.
+- **Partial:** write a `Resume:` block with phase + scanned-file ledger for context-death recovery.

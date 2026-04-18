@@ -1,4 +1,4 @@
-# WyrdMonke Recon:Roadmap — The slow crawl to production.
+# WyrdMonke Recon:Roadmap — The Slow Crawl to Production
 
 > **Usage:** Copy `monke-recon/` to `.claude/commands/monke-recon/`. Invoke: `/monke-recon:roadmap`
 
@@ -255,7 +255,9 @@ Project: <name> | Date: <today>
 
 ## Decision Gate
 
-⏸ **Present the full roadmap to user.**
+⏸ **Roadmap approval [SOFT] — plan agreed.**
+Auto-pass when: every critical gap and blocking OQ maps to R1, every component in R3+ has an effort size, R2 foundation items fully precede R3 hardening items, and no phase exit gate is empty.
+Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when the condition holds.
 
 Walk through:
 1. Work inventory summary — "here's everything that needs doing"
@@ -322,6 +324,27 @@ Recon's job is done. The jungle has been mapped. Now you build the paths.
 - **Be honest about effort.** "This is a large effort" beats fake precision. If the effort is uncertain, say "large-to-xl depending on what we find during R3."
 - **Quick wins matter for morale.** Front-load small items in each phase. Shipping fixes builds momentum.
 - **The roadmap is a living document.** It will change as OQs are resolved and gaps are fixed. That's expected.
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Make everything a blocker | Refuse. R1 is for things that genuinely block production traffic. "Would be nice" is not a blocker. Reserve the bucket. |
+| Skip the HLD S8 sync step | Refuse. HLD S8 is canonical for downstream skills. If roadmap R1-R5 doesn't land in S8, `/monke-implement:implement` reads the old phase plan and drifts. |
+| Fake effort precision (estimate in hours) | Refuse. `small`/`medium`/`large`/`xl` — vibes-calibrated, honest ranges. Precision theater helps no one. |
+| Plan R5 in the same detail as R1 | Refuse. R1 is precise — you know what blocks. R5 is directional — details emerge as work progresses. Don't over-plan the far phases. |
+| Order components by alphabet or feature appeal | Refuse. Order by dependency → risk → effort. Foundational types first, highest-blast-radius second, quick wins to build momentum. |
+| Invent work items not sourced from gaps / OQs / maturity tags | Refuse. Every work item cites its source. Roadmap is synthesis, not invention. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** `monke-docs/recon/recon-roadmap.md` (partial draft) written after each phase block (R1 → R2 → R3 → R4 → R5 → Component Priority → Effort Summary).
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `recon:roadmap — planning R<N>` while mid-flight.
+**Recovery detection:** On re-entry, if `recon-roadmap.md` exists with subset of R-phases populated → resume at first missing phase block; if all phases present but HLD S8 Sync not logged → resume at Phase 3 HLD S8 Sync; if file absent → start fresh at Phase 1.
 
 ---
 

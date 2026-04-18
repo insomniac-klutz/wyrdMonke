@@ -187,8 +187,37 @@ Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json, Claude Code
 | Cost | High — each teammate is a full Claude session | Lower — runs within existing session |
 | User interaction | You can Shift+Down to interact with any teammate directly | Only through parent |
 
-**Use Agent Teams for:** HLD creation, LLD creation (design verification requires adversarial peer communication).
-**Use Subagents for:** Implementation tasks, focused research, single-file operations, anything sequential.
+#### Team Decision Heuristic (single decision function)
+
+Do NOT scatter team-vs-subagent guidance across skills. Every skill defers to this function:
+
+    IF adversarial review is required (design, security, HLD/LLD)
+        → Agent Team (adversarial pair OR compliance pair archetype)
+    ELSE IF >3 independent parallelizable items exist
+        → IF >5 items: prefer Agent Team (worker pool archetype)
+          ELSE: Subagents acceptable, Agent Team still preferred when items are long-running
+    ELSE IF producer/consumer handoff with distinct outputs
+        → Agent Team (pipeline pair archetype)
+    ELSE IF sequential, <3 files, or same-file work
+        → Subagent or lead-direct
+    ELSE
+        → Subagent
+
+#### Team Sizing
+
+**2 teammates is optimal, not 3-5.** The lead counts as a session. Max 4 teammates, and only for the worker-pool archetype with genuinely independent work. Every teammate beyond 2 adds coordination tax that usually outweighs parallelism gains.
+
+#### Four Team Archetypes (canonical shapes)
+
+| Archetype | Composition | Use Case | Protocol |
+|-----------|-------------|----------|----------|
+| **Adversarial pair** | Architect + Critic | HLD, ADR with high-stakes trade-offs | Producer writes, adversary attacks, lead synthesizes. Max 3 rounds. |
+| **Compliance pair** | Designer + Reviewer | LLD, security review, standards conformance | Producer writes, reviewer flags violations (does NOT fix), peer-to-peer until converged. Max 3 rounds. |
+| **Worker pool** | N parallel identical agents (N ≤ 4) | Bulk same-shape work (scan N dirs, write N LLDs in parallel) | Lead fans out identical prompts with scoped inputs, teammates work independently, lead assembles. |
+| **Pipeline pair** | Producer + Consumer | Multi-stage handoff with distinct output contracts | Producer writes artifact A, consumer reads A and writes artifact B. No peer loop — one-way flow. |
+
+**Use Agent Teams for:** HLD creation (adversarial pair), LLD creation (compliance pair), parallel same-shape work (worker pool), multi-stage handoffs (pipeline pair).
+**Use Subagents for:** Implementation tasks, focused research, single-file operations, anything sequential with <3 items.
 
 ### 3.2 Critical Mechanics
 
@@ -198,13 +227,28 @@ Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json, Claude Code
 
 3. **Peer messaging.** Teammates message each other directly. The Architect can send a proposal directly to the Critic — no lead relay needed. Design the team to exploit this.
 
-4. **Keep teams small.** 2 teammates per team with narrow scope consistently outperforms larger teams. The lead counts as a session too.
+4. **Keep teams small.** 2 teammates is optimal. Max 4 (worker-pool only). Coordination tax grows faster than parallelism gains.
 
 5. **Plan first, then team.** Before spawning a team, the lead should have the task broken down and the kickoff prompt ready. Letting teams explore without a plan wastes tokens.
 
 6. **One team per session.** Clean up the current team before starting a new one. No nested teams — teammates cannot spawn their own teams (they CAN use subagents for focused subtasks).
 
 7. **File ownership.** Each teammate should own specific output files. Concurrent writes to the same file cause conflicts. Define non-overlapping file assignments in spawn prompts.
+
+#### Team Failure Mode Protocols (mandatory)
+
+Teams fail in predictable ways. The lead MUST apply these protocols — silent absorption of team failures produces worse output than solo work.
+
+| Failure | Protocol |
+|---------|----------|
+| **Round cap reached** | Adversarial/compliance pairs: default cap is 3 peer rounds. At round 3 without convergence, lead synthesizes the best-available output from both sides and proceeds. Lead records the unresolved disagreement in the Review Log (LLD) or Challenges Considered (ADR). |
+| **Garbage output** | If a teammate's output does not reference the input artifact (no file path, no contract, no section ID), discard the output, re-prompt ONCE with the missing context inlined. If second output is still garbage → terminate that teammate, complete solo or re-spawn. |
+| **Timeout** | 5 min with no task-list or message activity from a teammate → lead sends a status-check message. 7 min total silence → terminate the teammate. Do not wait indefinitely. |
+| **Crash / stuck in_progress** | If a teammate's task is stuck `in_progress` and the session is unresponsive, lead reads any partial output that was written, then either completes solo (if partial is sufficient) or re-spawns a replacement with the partial output inlined as seed context. |
+| **Infinite disagreement** | If two teammates ping-pong past the round cap without converging on even the disagreement itself, lead terminates the loop, records both positions verbatim, and escalates to user as a **⏸ PG** (typically PG-5 or PG-9). |
+| **Escalation to user** | Escalation is terminal for that round. The lead does NOT silently absorb unresolved conflicts into a "best guess." Conflicts unresolved by the team become user decisions, full stop. |
+
+Round caps, timeouts, and garbage detection are MANDATORY. Skills that spawn teams must name their round cap explicitly in the spawn prompt (default 3 if unstated).
 
 ### 3.3 HLD Team
 
@@ -232,7 +276,7 @@ Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json, Claude Code
     to monke-docs/critic-notes.md. If you find no flaw, say so explicitly.
     You own: monke-docs/critic-notes.md
 
-The lead acts as Coordinator: synthesizes Architect+Critic outputs, presents to user at each pause gate, resolves conflicts. The lead also performs the Contracts Auditor role (boundary matrix verification) after L3, or spawns a third teammate only if the system has >5 cross-boundary contracts.
+The lead acts as Coordinator: synthesizes Architect+Critic outputs, presents to user at each pause gate, resolves conflicts. The lead also performs the Contracts Auditor role (boundary matrix verification) after L3. Keep the team at 2. Do not spawn a third teammate for auditing — if the system has >5 cross-boundary contracts, the lead audits across multiple passes rather than expanding team size (see S3.1 sizing).
 
 **Flow:**
 1. Lead creates team, spawns Architect + Critic
@@ -268,7 +312,7 @@ The lead acts as Coordinator: synthesizes Architect+Critic outputs, presents to 
     Max 3 rounds, then escalate to lead.
     You own: monke-docs/lld/<component>-review.md
 
-The lead performs the Test Engineer role: writes unit + integration test plan after Designer and Reviewer converge. For complex components (>5 public interfaces), spawn a third teammate as Test Engineer.
+The lead performs the Test Engineer role: writes unit + integration test plan after Designer and Reviewer converge. Keep the team at 2. For complex components (>5 public interfaces), the lead splits test planning across passes rather than spawning a third teammate (see S3.1 sizing).
 
 **Flow:**
 1. Lead creates team, spawns Designer + Reviewer
@@ -287,7 +331,7 @@ The lead performs the Test Engineer role: writes unit + integration test plan af
 - Implementation of already-designed components (use subagents for parallel file work)
 - Sequential tasks with many dependencies between steps
 
-If in doubt, use the team. **Test gates (S11) and pause gates (S9.4) are NEVER skippable, even when teams are skipped.**
+If in doubt, use the team. **Test gates (S11) always run. Gate pauses still follow the S9.4 classification (AUTO / SOFT / HARD / TRIGGERED) — HARD gates and fired TRIGGERED gates remain non-skippable even when teams are skipped.**
 
 ### 3.6 Team Artifacts (Must Persist After Shutdown)
 
@@ -297,6 +341,19 @@ Before shutting down a team, lead copies these into permanent docs:
 - Test plan → LLD directly
 
 Team working files (draft docs, message logs) can be cleaned up after artifacts are captured.
+
+### 3.7 Team Re-use for Sequential Same-Type Work
+
+For multiple artifacts of the same shape in the same phase (e.g. 4 LLDs for 4 components, or 3 HLD revisions in the same refactor pass), **keep the team alive and reassign tasks via `SendMessage`**. Do NOT teardown + recreate per artifact.
+
+Rules:
+- Team type must match the work type. An LLD-shaped team (Designer + Reviewer) reuses across multiple LLDs. It does NOT reuse for HLD work.
+- Clear working files between tasks (or scope them per-artifact: `<component>-draft.md`, `<component>-review.md`).
+- Reset round counters per task. Round cap resets to 3 for each new component.
+- Team persists only for the current phase. Between phases, tear down.
+- If a teammate has accumulated garbage / confusion from prior tasks, terminate and respawn the teammate (not the whole team).
+
+Saves: spawn latency, re-loading of CLAUDE.md + specs, cold-start token cost per teammate.
 
 ---
 
@@ -389,7 +446,14 @@ Only when implementation of that component is about to begin. Never pre-generate
     Type: traditional/agentic  |  Pattern: <n> (agentic)  |  ADR: NNN
     Upstream: <Model> from <module>  |  Downstream: <Model> to <module>
     Errors: <what crosses boundary>
+    Tool subtypes: <list per S1.2 — e.g. static-contract, versioned-artifact, data-dependent>
+    Version pins: <artifact: version>  (required if any versioned-artifact tool)
+    Eval thresholds: <metric: threshold>  (required if any versioned-artifact or data-dependent tool)
+    Drift thresholds: <metric: threshold>  (required if any data-dependent tool)
+    Confidence: auto-generated | reviewed | verified
     Phase: <N>  |  Test gate: pending/passed
+
+The `Tool subtypes`, `Version pins`, `Eval thresholds`, and `Drift thresholds` fields are mandatory whenever the component's action space includes the matching tool subtype per S1.2. Omit lines that do not apply (static-contract-only components omit version/eval/drift). The `Confidence` field tracks LLD maturity: `auto-generated` (produced mechanically from code or HLD by fast onboarding), `reviewed` (human has confirmed), `verified` (has passed implementation + test gates). Downstream skills MUST NOT treat `auto-generated` LLDs as trusted input for neighbor-component contracts.
 
 **Internal Design:** Full-typed signatures; pure functions separated from IO functions. State machines + transition tables. Algorithms + complexity + edge cases. Expected errors as return types, unexpected as exceptions. LLM interface patterns per project-specs S10.1. Database query layer per project-specs S10.1.
 
@@ -433,6 +497,8 @@ Restating HLD. Aspirational prose. Decisions without rationale. Violating locked
 
 ## 7. ADR Rules
 
+> **Namespace note:** `design-specs S7` = this section (ADR Rules). `HLD S7` = the Boundary Matrix inside a project's HLD document (see S5.1). The two are different things. When a skill says "follow S7" it MUST qualify which: write `design-specs S7` for ADR rules, or `HLD output S7` (equivalently `HLD S7`) for the boundary matrix artifact. Never say bare "S7" in skill content.
+
 ### 7.1 Template
 
     # ADR-NNN: Title
@@ -471,9 +537,9 @@ Rules: Every OQ tags what it blocks (LLD, implementation, or test). Blocking OQs
 
 ### 9.1 Planning
 
-1. **Incremental.** L1 ⏸ L2 ⏸ L3 ⏸. Each level ends with a pause gate.
-2. **LATS at every branch.** Expand, evaluate, select, **pause for user confirmation**.
-3. **Agent team for HLD.** Spawn per S3.3. Not subagents.
+1. **Incremental.** L1 → L2 → L3. Each level ends with a gate (class per S9.4: PG-1 HARD, PG-2/3 SOFT).
+2. **LATS at every branch.** Expand, evaluate, select. PG-5 [SOFT] surfaces unless auto-pass condition holds.
+3. **Agent team for HLD.** Spawn per S3.3 (adversarial pair archetype). Not subagents.
 4. **Flag unknowns.** → open-questions.md. Never invent answers.
 5. **Contracts before internals.** In/out/errors first, then structure.
 6. **Challenge scope creep.** Beyond current phase → push back, park as OQ.
@@ -484,14 +550,14 @@ Rules: Every OQ tags what it blocks (LLD, implementation, or test). Blocking OQs
 
 ### 9.2 Implementation
 
-11. **LLD before code.** No LLD → create per S6.2.
-12. **Agent team for LLD.** Per S3.4, except trivials per S3.5.
-13. **ADaPT during LLD.** Show tree. Agentic: decompose per CoALA dimension. **Pause after decomposition.**
-14. **Update docs on divergence.** Fix LLD → fix HLD if boundary changed.
-15. **One component at a time.** Build, verify contract, next.
-16. **Locked stack enforced.** Use locked technologies per project-specs S10.1. No exceptions without ADR.
+11. **LLD before code.** No LLD → create per S6.2. Auto-generated LLDs (progressive formalization) permitted when allowed by rigor; never trusted for neighbor-component contracts until upgraded to `reviewed`.
+12. **Agent team for LLD.** Per S3.4 (compliance pair archetype), except trivials per S3.5.
+13. **ADaPT during LLD.** Show tree. Agentic: decompose per CoALA dimension. PG-8 [SOFT] surfaces unless auto-pass holds.
+14. **Update docs on divergence.** Fix LLD → fix HLD if boundary changed. PG-14 [TRIGGERED] fires when HLD amend is required.
+15. **One component at a time.** Build, verify contract, next. Parallel work on independent components via worker pool (S3.1) is permitted.
+16. **Locked stack enforced.** Use locked technologies per project-specs S10.1. No exceptions without ADR. PG-12 [TRIGGERED] fires on violation.
 17. **De-escalate on evidence.** Fewer dynamic decisions → simpler pattern + ADR.
-18. **Tests are not optional.** Unit + integration per LLD. System per phase. See S11.
+18. **Tests are not optional.** Unit + integration per LLD. System per phase. See S11. IL-0 through IL-3 are AUTO — they run silently but surface on fail.
 19. **No advancing past a failed gate.** Fix code or fix design first.
 
 ### 9.3 Anti-Patterns to Refuse
@@ -517,43 +583,97 @@ Rules: Every OQ tags what it blocks (LLD, implementation, or test). Blocking OQs
 | Treat LLM calls as special (separate orchestration, separate error handling) | Refuse. An LLM call is a versioned-artifact tool. Same action space, same eval tier, same contract. |
 | Build a standalone feature engineering or data preprocessing pipeline | Refuse. Pre/post-processing is the pure-function layer around a tool call (implementation-specs Layer 2). Not a separate system. |
 
-### 9.4 Pause Gates (Mandatory User Confirmation Points)
+### 9.4 Gates (Adaptive — AUTO / SOFT / HARD / TRIGGERED)
 
-Claude MUST stop generating and wait for explicit user confirmation at every pause gate. Claude does NOT auto-proceed by assuming agreement. Claude does NOT combine multiple gates into one response.
+Not every gate pauses. Gates are classified by **type**, and gate behavior is further modulated by **rigor level** (S12). The flat "every gate pauses" rule is abolished — it produced the ~14-touchpoint friction wall that made the framework unusable. Rigor determines how many SOFT gates actually surface; AUTO gates stay silent unless they fail; HARD gates always surface; TRIGGERED gates fire only when their event fires.
 
-**Format:**
+**Skill-internal gates use a separate namespace.** The PG-N numbering in this section is reserved for the 14 canonical gates listed below. Skill-specific pauses (draft confirmations, bootstrap steps, triage holds) that do NOT map to any canonical gate MUST use the `SKILL-GATE:<slug>` prefix (see `monke-drafter.md` §5). They still carry a classification (`[SOFT]/[HARD]/[TRIGGERED]`) and honor rigor, but they are not part of the PG-N audit trail and never appear in Gate Audit Log lines that claim canonical status.
+
+**Format (when a gate surfaces to the user):**
 
     ⏸ PAUSE GATE: <what was just decided/presented>
     Recommended: <recommendation with reason>
     Alternatives: <runner-ups or "none">
     Confirm / Adjust / Reject?
 
-#### Schedule
+#### Gate Classification (canonical — all skills MUST align to this)
 
-| ID | Trigger | Proceeds When |
-|----|---------|--------------|
-| PG-1 | L1 Context drafted | User confirms L1 |
-| PG-2 | L2 Containers drafted | User confirms L2 |
-| PG-3 | L3 Components drafted | User confirms L3 |
-| PG-4 | Boundary matrix audited | User confirms no gaps |
-| PG-5 | LATS decision point | User confirms selection |
-| PG-6 | Backend language choice (non-default) | User approves exception |
-| PG-7 | Anthropic pattern selection | User confirms pattern |
-| PG-8 | ADaPT decomposition | User confirms before sub-problems attempted |
-| PG-9 | LLD design converged | User confirms design |
-| PG-10 | Test plan complete | User confirms test plan |
-| PG-11 | Phase checkpoint | User signs off phase (**never skippable**) |
-| PG-12 | Stack violation | User grants/denies exception |
-| PG-13 | Test failure >2 cycles | User decides: fix, redesign, or escalate |
-| PG-14 | HLD revision from LLD | User confirms HLD update |
+| Type | Behavior | Gates in this class |
+|------|----------|---------------------|
+| **AUTO** | Runs silently. Surfaces ONLY on failure. Passing emits a one-line audit log. | IL-0, IL-1, IL-2, IL-3 |
+| **HARD** | Always surfaces to user. Never auto-passes. Never skippable at any rigor. | PG-1 (scope / L1 context), PG-6 (non-default language), PG-11 (phase checkpoint / ship) |
+| **SOFT** | Surfaces based on rigor level (S12) AND auto-pass conditions. If auto-pass conditions hold at the active rigor, gate self-confirms and emits a one-line audit log. | PG-2, PG-3, PG-4, PG-5, PG-7, PG-8, PG-9, PG-10 |
+| **TRIGGERED** | Surfaces only when the triggering event fires. Does NOT fire on every project. When it fires, it surfaces regardless of rigor. | PG-12 (stack violation), PG-13 (persistent failure >2 cycles), PG-14 (HLD revision from LLD) |
+
+#### Full Schedule (by ID)
+
+| ID | Type | Trigger | Surfaces When |
+|----|------|---------|---------------|
+| IL-0 | AUTO | Layer 0 complete | On failure only |
+| IL-1 | AUTO | Layer 1 complete | On failure only |
+| IL-2 | AUTO | Layer 2 complete | On failure only |
+| IL-3 | AUTO | Layer 3 complete | On failure only |
+| PG-1 | HARD | L1 Context drafted / project scope decided | Always |
+| PG-2 | SOFT | L2 Containers drafted | Unless auto-pass (see below) |
+| PG-3 | SOFT | L3 Components drafted | Unless auto-pass |
+| PG-4 | SOFT | Boundary matrix audited | Unless auto-pass |
+| PG-5 | SOFT | LATS decision point | Unless auto-pass (clear winner) |
+| PG-6 | HARD | Backend language choice (non-default) | Always |
+| PG-7 | SOFT | Anthropic pattern selection | Unless auto-pass (simplest viable pattern) |
+| PG-8 | SOFT | ADaPT decomposition | Unless auto-pass |
+| PG-9 | SOFT | LLD design converged | Unless auto-pass (0 reviewer violations) |
+| PG-10 | SOFT | Test plan complete | Unless auto-pass |
+| PG-11 | HARD | Phase checkpoint / ship | Always — NEVER skippable |
+| PG-12 | TRIGGERED | Stack violation detected | Only when violation detected |
+| PG-13 | TRIGGERED | Test failure >2 cycles | Only when failure threshold hit |
+| PG-14 | TRIGGERED | LLD reveals HLD boundary change | Only when divergence detected |
+
+**PG-9 escalation sub-case.** When `implement.md` surfaces a contract-internal design issue during Layer 2 (test reveals a design bug without changing the boundary to other components), it fires PG-9 as an escalation — the original design was wrong. Use the same auto-pass/rigor behavior as standard PG-9.
+
+**PG-14 boundary-change sub-case.** PG-14 also fires when `implement.md` discovers during Layer 2 that the LLD's contract with a neighbor component is wrong (the boundary between components shifts). This is distinct from PG-9 (contract-internal). Always TRIGGERED; always surfaces.
+
+#### Auto-Pass Conditions (SOFT gates only)
+
+A SOFT gate self-confirms and emits an audit log instead of pausing when the condition holds AND rigor permits (S12). If the condition fails, the gate surfaces regardless of rigor.
+
+| Gate | Auto-Passes When |
+|------|------------------|
+| PG-2 (Containers) | All containers have tech + one-sentence responsibility + type tag (`traditional`/`agentic`) assigned. |
+| PG-3 (Components) | All boundaries typed, no orphan components, every component has an LLD owner. |
+| PG-4 (Boundary Matrix) | Matrix complete (no empty rows), no orphan boundaries, contracts consistent across upstream/downstream, stability column filled. |
+| PG-5 (LATS) | Recommended option has clear advantage (dominates runner-up on ≥2 constraints with no trade-off loss). NOT a close call. |
+| PG-7 (Pattern) | Simplest viable Anthropic pattern selected (no escalation beyond S1.3's recommended row for the task type). |
+| PG-8 (ADaPT) | Decomposition has <5 sub-problems AND no ambiguous splits (every sub-problem has a clear boundary contract). |
+| PG-9 (LLD Design) | Reviewer found 0 violations AND all contracts match HLD boundary matrix exactly. |
+| PG-10 (Test Plan) | Every public function has ≥1 happy + 1 edge + 1 error test AND every boundary in LLD has ≥1 integration test. |
+
+#### Rigor Behavior Matrix
+
+Rigor is declared in `.monke-config.md` per S12. Behavior per gate class at each rigor level:
+
+| Gate Class | light | standard | thorough |
+|------------|-------|----------|----------|
+| AUTO | Silent; surface on fail | Silent; surface on fail | Silent; surface on fail |
+| HARD | Always surfaces | Always surfaces | Always surfaces |
+| SOFT | Auto-pass aggressively — surface only if auto-pass condition fails | Auto-pass when condition holds — surface otherwise | Always surfaces regardless of auto-pass |
+| TRIGGERED | Surfaces when triggered | Surfaces when triggered | Surfaces when triggered |
+
+**Critical invariants:**
+
+1. **AUTO gates that FAIL become visible.** Failing infrastructure is never silent. IL-2 with assertion-less tests fails AUTO → surfaces.
+2. **TRIGGERED gates fire regardless of rigor.** A stack violation (PG-12) at `light` still pauses. Rigor does not hide triggered events.
+3. **HARD gates are never skippable.** PG-11 never skippable at any rigor. PG-1 and PG-6 never skippable.
+4. **Auto-pass emits audit trail.** Every auto-passed SOFT gate writes one line: `[gate:PG-2] auto-confirmed (quality checks passed, rigor=standard)`. Session summary enumerates all gate outcomes.
+5. **Failing SOFT gate surfaces regardless of rigor.** `light` doesn't hide failures, it hides confirmations.
 
 #### Rules
 
-1. **One gate per response.** Complete work to next gate, present, stop.
+1. **One gate per response when surfacing.** Complete work to next gate, present, stop.
 2. **No implicit confirmation.** "Looks good" = confirm. Silence = ask again.
 3. **Gate output is the artifact.** The actual L1 draft / options / test plan, not a summary.
-4. **User can opt out selectively.** "Auto-confirm trivial LATS" is fine. PG-11 never skippable.
-5. **PG-5 fires per branch.** Each LATS decision within a level is a separate pause if non-trivial.
+4. **User can adjust rigor mid-project.** `.monke-config.md` can be changed between phases.
+5. **PG-5 fires per branch** when it surfaces. Each LATS decision within a level is separately evaluated.
+6. **Audit log is mandatory.** Every gate outcome (passed / auto-passed / failed / user-confirmed / user-rejected) emits a one-line entry.
 
 ---
 
@@ -672,3 +792,51 @@ Each HLD S4 data flow end-to-end. Error injection per flow. Agentic: full loop w
 4. **Persistent (>2 cycles):** **⏸ PG-13.** Escalate to user. Likely LATS backtrack.
 
 Claude MUST NOT weaken a test to pass a gate.
+
+---
+
+## 12. Rigor Levels
+
+Rigor determines how many SOFT gates surface to the user (see S9.4). It is declared in `.monke-config.md` and can be adjusted between phases. Rigor does NOT affect AUTO, HARD, or TRIGGERED gate classes — those behave identically regardless.
+
+### 12.1 Levels
+
+| Rigor | Human gates per project (approx) | SOFT behavior | Use Case |
+|-------|----------------------------------|---------------|----------|
+| **light** | ~2 (PG-1 + PG-11, plus any TRIGGERED) | Aggressive auto-pass — SOFT gate surfaces only if its auto-pass condition fails | MVPs, spikes, personal projects, throwaway tools, fast prototyping |
+| **standard** | ~4-5 (HARD gates + SOFT gates whose auto-pass condition does not hold) | Auto-pass when condition holds, surface otherwise | Medium projects, team work, most production code |
+| **thorough** | ~8+ (all HARD + all SOFT always surface + all TRIGGERED when they fire) | All SOFT gates always surface regardless of auto-pass | Large systems, regulated/compliance projects, safety-critical, >15 components, agentic-heavy |
+
+### 12.2 Config Format
+
+`.monke-config.md`:
+
+    # Monke Config
+    rigor: standard     # light | standard | thorough
+    rigor-overrides:    # optional per-gate overrides
+      PG-5: auto        # force auto-pass behavior for this gate
+      PG-9: always      # force always-surface for this gate
+
+Per-gate overrides are applied AFTER rigor is resolved. `auto` forces auto-pass behavior (as if light). `always` forces always-surface behavior (as if thorough). Overrides do NOT apply to HARD, AUTO, or TRIGGERED gates — those ignore overrides.
+
+### 12.3 Auto-Escalation Triggers
+
+The orchestrator MUST suggest escalating rigor (not silently enforce) when any of the following is detected. User can decline.
+
+| Trigger | Suggest Rigor |
+|---------|---------------|
+| `>15 components` in fast-onboarding scan | thorough |
+| Agentic patterns detected (any container tagged `agentic`) | thorough |
+| Compliance keywords detected in project-specs, docs, or file names: `hipaa`, `pci`, `gdpr`, `sox`, `iso-27001`, `fedramp`, `soc2`, `ccpa`, `regulated` | thorough |
+| Any versioned-artifact or data-dependent tool in action space | at least standard |
+| Multi-container polyglot project (>1 backend language) | at least standard |
+| Greenfield project with no prior code AND rigor unset | standard (default) |
+
+Escalation is suggested via a HARD gate: "Detected <trigger>. Recommend rigor=<level>. Accept / Override / Keep current?"
+
+### 12.4 Rigor Inheritance
+
+- Rigor set at project level applies to all components unless overridden per-container.
+- Per-container rigor via `.monke-config.md` `containers:` map (optional).
+- A component at `thorough` inside a `light` project surfaces its SOFT gates. A component at `light` inside a `thorough` project does NOT hide its SOFT gates (project wins — higher rigor dominates).
+- **Rigor never downgrades HARD gates.** `light` does not hide PG-1, PG-6, or PG-11. Ever.

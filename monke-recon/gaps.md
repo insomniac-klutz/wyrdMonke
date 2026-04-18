@@ -1,4 +1,4 @@
-# WyrdMonke Recon:Gaps — What's missing for prod?
+# WyrdMonke Recon:Gaps — The Honest Confession
 
 > **Usage:** Copy `monke-recon/` to `.claude/commands/monke-recon/`. Invoke: `/monke-recon:gaps [focus]`
 
@@ -28,6 +28,12 @@ Read `monke-status.md` to verify current state. Then check:
 
 Optional but recommended:
 - `monke-docs/lld/*.md` — component-level detail makes gap detection more precise.
+
+**LLD trust check.** Before using an LLD's contract for cross-component reasoning, read the `Confidence:` header of each LLD consumed. If `Confidence: auto-generated` AND this component's contract is referenced from a neighbor's gap analysis, surface a warning (not a gate — just advisory):
+
+> Gap analysis is consuming an auto-generated LLD (`<component>.md`) for cross-component reasoning. Auto-generated LLDs are un-reviewed — results may include phantom gaps from imprecise contracts. Recommend: run `/monke-design:lld <component>` review first, or mark gaps touching `<component>` as provisional in the output.
+
+If `Confidence: reviewed` or `verified` → proceed normally.
 
 ---
 
@@ -177,7 +183,9 @@ Project: <name> | Date: <today> | Focus: <focus or "full scan">
 
 ## Decision Gate
 
-⏸ **Present gaps grouped by severity.**
+⏸ **Gap review [SOFT] — findings triaged.**
+Auto-pass when: every gap row has Severity + Effort + Component filled, zero critical-severity rows exist, and the summary table matches the per-section row counts.
+Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when the condition holds.
 
 Show the summary table first. Then walk through criticals and highs. User confirms, dismisses, or reprioritizes.
 
@@ -200,6 +208,27 @@ Update `recon-gaps.md` with user's adjustments before finalizing.
 - **Don't prescribe solutions.** That's the roadmap's job. Gaps just identifies the holes.
 - **Severity is contextual.** Missing auth is critical for a public API, low for an internal CLI tool. Assess against the system's actual exposure surface.
 - **Effort estimates are rough.** `small` = a focused PR. `xl` = a multi-day effort touching multiple components. Don't fake precision.
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Prescribe solutions in gap findings | Refuse. Gaps lists holes. `/monke-recon:roadmap` lists fixes. Don't pre-solve. |
+| Inflate severity to look thorough (everything is critical) | Refuse. Severity is contextual — missing auth is critical for a public API, low for an internal CLI. Assess against exposure surface. |
+| Duplicate what the survey already said | Refuse. Survey = what exists. Gaps = what's missing. No overlap. |
+| Miss gaps at HLD boundary matrix `implicit` rows | Refuse. Every `implicit` status in the matrix is almost always a gap. Check them all. |
+| Add wishlist items as "gaps" (no Kubernetes autoscaling for a hobby CLI) | Refuse. Focus on what genuinely blocks production, not aspirational infrastructure. |
+| Fake effort precision (4.5 hours) | Refuse. `small`/`medium`/`large`/`xl` — vibes-calibrated, honest ranges, not false precision. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** `monke-docs/recon/recon-gaps.md` (partial draft) written after each dimension scan (Error Handling, Security, Performance, Observability, Testing, Data Integrity, Documentation, Accessibility). Each completed dimension appends its rows to the draft.
+**Status line marker:** `Where We Are:` in `monke-status.md` reads `recon:gaps — scanning <dimension>` while mid-flight.
+**Recovery detection:** On re-entry, if `recon-gaps.md` exists with a subset of dimensions populated → resume at first unscanned dimension; if all dimensions scanned but Decision Gate not logged → re-present the grouped summary; if focus-area run already complete → warn before rescanning.
 
 ---
 
