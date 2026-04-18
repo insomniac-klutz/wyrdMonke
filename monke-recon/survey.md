@@ -1,4 +1,4 @@
-# WyrdMonke Recon:Survey — What do we actually have?
+# WyrdMonke Recon:Survey — The Jungle Map
 
 > **Usage:** Copy `monke-recon/` to `.claude/commands/monke-recon/`. Invoke: `/monke-recon:survey [scope]`
 
@@ -7,12 +7,13 @@
 ## Arguments
 
 `$ARGUMENTS` parsing:
-- Single positional: scope limiter (subdirectory, component name, or glob pattern)
-- Default (empty): analyze entire project
-- Example: `/monke-recon:survey src/api` or `/monke-recon:survey "*.rs"`
+- First positional: scope limiter (subdirectory, component name, or glob pattern). Default (empty): analyze entire project.
+- Second positional: `resume:<N>` — skip to phase `<N>` with checkpoint re-read (see drafter §7). Phase numbers: 2=stack, 3=structure, 4=dependencies, 5=tests, 6=quality.
+- Example: `/monke-recon:survey src/api` or `/monke-recon:survey "*.rs"` or `/monke-recon:survey "" resume:4`
 
 ```
-SCOPE="${ARGUMENTS:-}"
+SCOPE="${1:-}"
+RESUME_PHASE="$(echo "$2" | grep -oE '^resume:[0-9]+$' | cut -d: -f2)"
 ```
 
 ---
@@ -41,6 +42,12 @@ If design-specs or project-specs missing → warn but don't block. Survey is abo
 
 ## Phase 1: Source Detection
 
+**Resume check (per drafter §7).** If arguments contain `resume:<N>`:
+1. Verify partial `monke-docs/recon/recon-survey.md` exists and parses (this skill does not write a lock-file — section-by-section writes serve as checkpoints).
+2. If parse check passes → skip to Phase `<N>` with prerequisites re-validated inline.
+3. If parse check fails → emit warning "resume:<N> specified but checkpoint invalid" and proceed from Phase 1 normally.
+4. See Context Death Protocol below for the full recovery spec.
+
 Determine the survey mode.
 
 1. Check for `monke-docs/flash/flash-manifest.md`.
@@ -49,7 +56,7 @@ Determine the survey mode.
      - **Found** → archaeology mode. You're digging through ruins. No map, just a shovel.
      - **Not found** → stop. Nothing to survey.
 
-2. If flash mode: also read `monke-docs/flash/flash-arch.md` (if it exists) for the original architecture plan.
+2. If flash-manifest exists AND `monke-docs/flash/flash-arch.md` exists (i.e., `/monke-flash:sketch` completed at least one architecture pass): read `flash-arch.md` for locked stack context. If `flash-arch.md` is absent, skip silently — the flash chain may have been halted before sketch finished.
 
 3. Create output directory: `monke-docs/recon/` (if it doesn't exist).
 
@@ -236,7 +243,9 @@ Project: <name> | Date: <today> | Mode: flash / archaeology | Scope: <scope or "
 
 ## Decision Gate
 
-⏸ **Present survey summary to user.**
+⏸ **Survey summary [SOFT] — inventory matches reality.**
+Auto-pass when: every container has tech + entry point, every component has a responsibility line, test inventory is populated (even if "none found"), and no "TBD"/"?"/"unknown" strings remain in the output file.
+Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when the condition holds.
 
 Show: container count, component count, test coverage (rough), quality rating (green/yellow/red per dimension), and top 3 concerns.
 
@@ -252,6 +261,26 @@ Confirm findings match user's understanding. If user corrects something → upda
 - **Don't prescribe fixes.** That's the job of `/monke-recon:gaps` and `/monke-recon:roadmap`. Survey just catalogs what IS.
 - **Dependency direction matters.** Always note consumer → provider, never just "these are related."
 - **Agentic code gets special attention.** LLM calls, agent loops, tool definitions — these are architecturally significant and often the most fragile.
+
+---
+
+## Anti-Patterns to Refuse
+
+| If asked to... | Do instead... |
+|----------------|--------------|
+| Prescribe fixes during survey ("you should add Redis here") | Refuse. Survey catalogs what IS. Fixes are `/monke-recon:gaps` + `/monke-recon:roadmap`. Stay in the inventory lane. |
+| Sample files instead of reading them all | Refuse. Survey reads every file in scope. For >20 files, use agent teams to parallelize — don't skip. |
+| Sugarcoat the quality snapshot | Refuse. "This error handling is a dumpster fire" is more useful than "error handling could be improved." Medical exam, not pep talk. |
+| Invent containers or components not backed by code signals | Refuse. Every container/component row cites a file, directory, manifest, or entry point. No speculative architecture. |
+| Treat survey output as trusted architectural input for implementation | Refuse. Survey is raw inventory. Reconstruct produces the HLD that downstream skills consume. |
+
+---
+
+## Context Death Protocol
+
+**Checkpoint artifacts:** `monke-docs/recon/recon-survey.md` (partial draft) written at the end of each Phase (2-6). Each phase closes a section of the draft; on re-entry the next phase picks up from the last written section.
+**Status line marker:** `Where We Are: recon:survey — phase <N> (<area>)` while mid-flight.
+**Recovery detection:** On re-entry, if `recon-survey.md` exists with sections incomplete → resume at first missing section (Stack, Structure, Dependencies, Tests, Quality); if all sections present but Decision Gate not logged → re-present summary; if file absent → start fresh at Phase 1.
 
 ---
 
