@@ -1,6 +1,8 @@
-# WyrdMonke Implement:Fill — Fill Project Specs Placeholders
+# WyrdMonke Implement:Fill — Bind Abstractions to Reality
 
-> **Usage:** Copy `monke-implement/` to `~/.claude/commands/monke-implement/`. Invoke: `/monke-implement:fill [group]`
+> **Usage:** `/monke-implement:fill [group]`
+>
+> Walks the eight placeholder groups in `project-specs.md`, suggests detected values from the actual codebase, and binds the abstract stack to the concrete one — one group, one pause, one confirmation at a time.
 
 ---
 
@@ -37,7 +39,19 @@ For each placeholder group:
 - Replace `<<<placeholder>>>` text with confirmed value using Edit tool.
 - `<<<project_name>>>` appears multiple times — use `replace_all: true`.
 
-**⏸ Pause after each group** — show filled values, get confirmation before next group.
+⏸ **SKILL-GATE:group-confirm [SOFT] — Group <N> values confirmed.** Pause after each group — show filled values, get confirmation before next group.
+Auto-pass when: every placeholder in the group was resolved by mechanical detection (manifest parse, `.env.example` read, `project-specs.md` cross-reference) AND the detected value matches the abstract concept unambiguously (one obvious candidate per placeholder).
+Rigor: surfaces under `thorough`; auto-confirms under `light`/`standard` when condition holds. **Group 2 (stack bindings) is HARD under `thorough` only** — the locked stack drives every downstream gate.
+
+Groups 1–8 each fire this gate independently with their own scope:
+- Group 1 (Identity): auto-pass when directory name or manifest `name` is unambiguous.
+- Group 2 (Stack & Design): auto-pass when every locked layer has exactly one detected candidate AND project-specs S2 mapping is unambiguous.
+- Group 3 (Dependencies): auto-pass when manifest + lock file are present and package manager commands derive directly.
+- Group 4 (Environment): auto-pass when `.env.example` parses cleanly; surfaces if any variable lacks a comment or has an unknown format.
+- Group 5 (Directory Structure): auto-pass when source/test dirs exist and match convention; surfaces if dirs are empty or ambiguous.
+- Group 6 (Tooling & CI): auto-pass when linter + CI config both parse; surfaces if either is absent or custom.
+- Group 7 (IL Gates): auto-pass when stack has canonical commands (e.g., `tsc --noEmit`, `cargo check`); surfaces for custom toolchains.
+- Group 8 (Test Bindings): auto-pass when test framework + runner + directories all detected and coverage tool config present; surfaces for new / missing frameworks.
 
 ---
 
@@ -133,7 +147,8 @@ After filling project-specs, check `CLAUDE.md` for consistency:
 3. If stack references are stale (e.g., CLAUDE.md says "npm" but project-specs now says "pnpm"), surface each mismatch and offer to update.
 4. If CLAUDE.md is already consistent — skip silently.
 
-**⏸ Pause** — show proposed CLAUDE.md changes (if any), get confirmation before applying.
+⏸ **SKILL-GATE:claudemd-sync [HARD] — CLAUDE.md sync confirmed.** Show proposed CLAUDE.md changes (if any), get confirmation before applying.
+Always surfaces when any change is proposed. CLAUDE.md is durable project instruction; human must review every stack-reference edit before it lands. When CLAUDE.md is already consistent (no changes proposed), this gate is skipped silently with an audit log entry.
 
 ---
 
@@ -157,11 +172,21 @@ After filling project-specs, check `CLAUDE.md` for consistency:
 
 ---
 
+## Context Death Protocol
+
+**Checkpoint artifacts:** in-progress edits to `monke-docs/project-specs.md` (per-group replacements) and `CLAUDE.md` (description, invariants, stack references). `monke-status.md` Bootstrap section records `N/8 groups filled`.
+**Status line marker:** `Where We Are:` reads `implement:fill — group <N> (<pending | confirming>)` while mid-flight.
+**Recovery detection:** On re-entry, grep `<<<` in `project-specs.md`: if any remain → resume at the group containing the first remaining placeholder. If all placeholders filled but CLAUDE.md still has stale references → resume at CLAUDE.md Sync. If fully complete → tell user "All 8 groups already filled" and exit.
+
+---
+
 ## Status Update
 
-On completion, update `monke-status.md`:
-- Update Bootstrap section: `- [x] Project-specs filled (N/8 groups) — <date>`
-- Bump `Updated:` line
+**Read on entry:** `monke-status.md` — check Bootstrap section for per-group progress; if called by `/monke-design:tinker`, detection summary is in context.
+**Write on exit:**
+- Success: `- [x] Project-specs filled (N/8 groups) — <date>` in Bootstrap section; bump `Updated:` line with date + `by /monke-implement:fill`.
+- Blocked: add row to Open Blockers with WHAT (which placeholder) / WHY (detection unclear or user deferred) / HOW (suggested next action).
+- Partial: record `Resume:` block naming which group paused and what was the last confirmed value.
 
 ---
 
