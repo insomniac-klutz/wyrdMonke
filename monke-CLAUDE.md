@@ -112,6 +112,17 @@ TeamCreate → TaskCreate (×N) → TaskUpdate (deps) → Agent w/ team_name (×
 2. **Any change to the Sacred Tree MUST update `monke-mermaid.mmd`** — add/remove nodes and edges to match the new structure.
 3. **The chain is non-negotiable:** skill dir change → Sacred Tree update → mermaid update. Skip a step, shame on monke.
 
+## Dependency Pinning
+
+**Pin every installed library to an exact version and commit the manifest change in the same action.**
+
+- Python: `pip install foo==1.2.3` → add `foo==1.2.3` to `requirements.txt` (or `pyproject.toml` / `Pipfile`).
+- Node: `npm install foo@1.2.3 --save-exact` → verify `package.json` shows `"foo": "1.2.3"` (no `^` / `~`).
+- Rust: `cargo add foo@=1.2.3` → verify `Cargo.toml` shows `foo = "=1.2.3"`.
+- Other stacks: use the equivalent exact-version syntax and update the manifest.
+
+No floating versions. No missing manifest entry. If the language has no `==` analogue, pin however that ecosystem pins and say so in the commit. Reproducibility is non-negotiable.
+
 ## Commit Format
 
 ```
